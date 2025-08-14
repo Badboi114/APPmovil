@@ -1,0 +1,7 @@
+{
+  "name": "PassVaultIonic",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}

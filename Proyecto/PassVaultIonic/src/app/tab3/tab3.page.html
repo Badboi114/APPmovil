@@ -1,0 +1,38 @@
+<ion-content [fullscreen]="true" class="lock-screen">
+  <div class="lock-container">
+    <div class="lock-icon">
+      <ion-icon name="shield-checkmark" size="large"></ion-icon>
+    </div>
+    
+    <h1>PassVault Bloqueado</h1>
+    <p>Ingresa tu PIN para desbloquear tu bóveda.</p>
+    
+    <div class="pin-dots">
+      <div class="pin-dot" [class.filled]="currentPin.length >= 1"></div>
+      <div class="pin-dot" [class.filled]="currentPin.length >= 2"></div>
+      <div class="pin-dot" [class.filled]="currentPin.length >= 3"></div>
+      <div class="pin-dot" [class.filled]="currentPin.length >= 4"></div>
+    </div>
+    
+    <div class="numpad">
+      <ion-button *ngFor="let num of numbers" 
+                  (click)="enterPin(num)" 
+                  fill="clear" 
+                  class="num-btn">
+        {{num}}
+      </ion-button>
+      
+      <div class="empty-btn"></div>
+      
+      <ion-button (click)="enterPin('0')" fill="clear" class="num-btn">0</ion-button>
+      
+      <ion-button (click)="deletePin()" fill="clear" class="num-btn delete-btn">
+        <ion-icon name="backspace-outline"></ion-icon>
+      </ion-button>
+    </div>
+    
+    <ion-button expand="block" (click)="unlockVault()" class="unlock-btn">
+      Desbloquear
+    </ion-button>
+  </div>
+</ion-content>

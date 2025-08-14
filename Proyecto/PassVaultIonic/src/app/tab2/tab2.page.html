@@ -1,0 +1,51 @@
+<ion-header [translucent]="true">
+  <ion-toolbar color="primary">
+    <ion-title>
+      <ion-icon name="lock-closed-outline"></ion-icon>
+      Bóveda
+    </ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="openAddModal()">
+        <ion-icon name="add"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="vault-content">
+  <div class="vault-container">
+    <h2>Bóveda de Contraseñas</h2>
+    <p>Tus contraseñas guardadas.</p>
+
+    <div *ngIf="passwords.length === 0" class="empty-vault">
+      <ion-icon name="key-outline" size="large"></ion-icon>
+      <h3>Tu bóveda está vacía.</h3>
+      <p>Añade una contraseña para empezar.</p>
+      <ion-button (click)="openAddModal()" fill="outline">
+        <ion-icon name="add" slot="start"></ion-icon>
+        Añadir Nueva
+      </ion-button>
+    </div>
+
+    <ion-card *ngFor="let password of passwords" class="password-item">
+      <ion-card-header>
+        <ion-card-title>{{password.siteName}}</ion-card-title>
+        <ion-card-subtitle>{{password.username}}</ion-card-subtitle>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-button fill="clear" (click)="copyPassword(password.password)">
+          <ion-icon name="copy-outline"></ion-icon>
+        </ion-button>
+        <ion-button fill="clear" color="danger" (click)="deletePassword(password.id)">
+          <ion-icon name="trash-outline"></ion-icon>
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button (click)="lockApp()">
+      <ion-icon name="lock-closed"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+</ion-content>
