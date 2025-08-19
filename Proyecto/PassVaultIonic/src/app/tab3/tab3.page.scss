@@ -1,0 +1,75 @@
+.settings-content {
+  --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.settings-container {
+  padding: 20px;
+  min-height: 100vh;
+}
+
+ion-card {
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  margin-bottom: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+}
+
+ion-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ion-color-primary);
+  font-weight: 600;
+}
+
+.user-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.user-card ion-card-title,
+.user-card ion-label h3,
+.user-card ion-label p {
+  color: white;
+}
+
+.user-card ion-icon {
+  color: white;
+}
+
+.security-card ion-card-title {
+  color: var(--ion-color-secondary);
+}
+
+.account-card ion-card-title {
+  color: var(--ion-color-danger);
+}
+
+.app-info-card ion-card-title {
+  color: var(--ion-color-medium);
+}
+
+ion-item {
+  --border-color: transparent;
+  --background: transparent;
+  margin: 8px 0;
+}
+
+ion-button {
+  --border-radius: 12px;
+  height: 48px;
+  font-weight: 600;
+  margin: 8px 0;
+}
+
+.security-note {
+  font-size: 0.9rem;
+  margin-top: 12px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+ion-icon[slot="start"] {
+  margin-right: 8px;
+}

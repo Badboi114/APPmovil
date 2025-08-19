@@ -1,3 +1,8 @@
 <ion-app>
-  <ion-router-outlet></ion-router-outlet>
+  <app-lock-screen 
+    *ngIf="showLockScreen" 
+    (unlocked)="onUnlocked()">
+  </app-lock-screen>
+  
+  <ion-router-outlet *ngIf="!showLockScreen"></ion-router-outlet>
 </ion-app>

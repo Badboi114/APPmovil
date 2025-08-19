@@ -1,0 +1,114 @@
+<ion-header [translucent]="true">
+  <ion-toolbar color="primary">
+    <ion-title>PassVault - Registro</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="register-content">
+  <div class="register-container">
+    <ion-card class="register-card">
+      <ion-card-header>
+        <ion-card-title class="text-center">🔐 PassVault</ion-card-title>
+        <ion-text color="medium" class="text-center">
+          <p>Crea tu cuenta para comenzar a usar PassVault</p>
+          <p><small>Todos los campos marcados con * son obligatorios</small></p>
+        </ion-text>
+      </ion-card-header>
+
+      <ion-card-content>
+        <ion-item class="input-item">
+          <ion-label position="stacked" color="primary">
+            <strong>Nombre Completo *</strong>
+          </ion-label>
+          <ion-input 
+            type="text" 
+            [(ngModel)]="name" 
+            placeholder="Ingresa tu nombre completo"
+            fill="outline"
+            required>
+          </ion-input>
+        </ion-item>
+
+        <ion-item class="input-item">
+          <ion-label position="stacked" color="primary">
+            <strong>Correo Electrónico *</strong>
+          </ion-label>
+          <ion-input 
+            type="email" 
+            [(ngModel)]="email" 
+            placeholder="ejemplo@correo.com"
+            fill="outline"
+            required>
+          </ion-input>
+        </ion-item>
+
+        <ion-item class="input-item">
+          <ion-label position="stacked" color="primary">
+            <strong>Contraseña *</strong>
+          </ion-label>
+          <ion-input 
+            type="password" 
+            [(ngModel)]="password" 
+            placeholder="Mínimo 6 caracteres"
+            fill="outline"
+            required>
+          </ion-input>
+        </ion-item>
+
+        <ion-item class="input-item">
+          <ion-label position="stacked" color="primary">
+            <strong>Confirmar Contraseña *</strong>
+          </ion-label>
+          <ion-input 
+            type="password" 
+            [(ngModel)]="confirmPassword" 
+            placeholder="Repite tu contraseña"
+            fill="outline"
+            required>
+          </ion-input>
+        </ion-item>
+
+        <ion-button 
+          expand="block" 
+          color="primary" 
+          (click)="register()" 
+          [disabled]="isLoading"
+          class="register-button">
+          <ion-spinner *ngIf="isLoading" name="crescent"></ion-spinner>
+          <span *ngIf="!isLoading">Crear Cuenta</span>
+        </ion-button>
+
+        <div class="info-section">
+          <ion-text color="medium">
+            <p class="info-text">
+              <ion-icon name="information-circle" color="primary"></ion-icon>
+              Después del registro, recibirás un PIN por correo electrónico para acceder a tu cuenta.
+            </p>
+          </ion-text>
+        </div>
+
+        <div class="login-link">
+          <ion-text color="medium">
+            <p>¿Ya tienes cuenta? 
+              <ion-button 
+                fill="clear" 
+                color="primary" 
+                (click)="goToLogin()">
+                Inicia sesión aquí
+              </ion-button>
+            </p>
+            <p>
+              <ion-button 
+                fill="clear" 
+                color="secondary" 
+                size="small"
+                (click)="goToEmailConfig()">
+                ⚙️ Configurar Email
+              </ion-button>
+            </p>
+          </ion-text>
+        </div>
+      </ion-card-content>
+    </ion-card>
+  </div>
+</ion-content>

@@ -1,51 +1,126 @@
-import { Component } from '@angular/core';
-import { NavController, ToastController } from '@ionic/angular';
-import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { 
+  IonContent, 
+  IonHeader, 
+  IonTitle, 
+  IonToolbar, 
+  IonCard, 
+  IonCardHeader, 
+  IonCardTitle, 
+  IonCardContent, 
+  IonItem, 
+  IonLabel, 
+  IonButton,
+  IonText,
+  IonIcon,
+  IonList,
+  ToastController,
+  AlertController
+} from '@ionic/angular/standalone';
+import { addIcons } from 'ionicons';
+import { personOutline, mailOutline, logOutOutline, refreshOutline } from 'ionicons/icons';
+import { AuthService, User } from '../services/auth.service';
 
 @Component({
   selector: 'app-tab3',
   templateUrl: 'tab3.page.html',
-  styleUrls: ['tab3.page.scss']
+  styleUrls: ['tab3.page.scss'],
+  imports: [
+    IonContent, 
+    IonHeader, 
+    IonTitle, 
+    IonToolbar, 
+    IonCard, 
+    IonCardHeader, 
+    IonCardTitle, 
+    IonCardContent, 
+    IonItem, 
+    IonLabel, 
+    IonButton,
+    IonText,
+    IonIcon,
+    IonList,
+    CommonModule, 
+    FormsModule
+  ]
 })
-export class Tab3Page {
-  currentPin = '';
-  correctPin = '1234';
-  numbers = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+export class Tab3Page implements OnInit {
+  currentUser: User | null = null;
 
   constructor(
-    private navController: NavController,
-    private toastController: ToastController
-  ) {}
-
-  async enterPin(digit: string) {
-    if (this.currentPin.length < 4) {
-      this.currentPin += digit;
-      await Haptics.impact({ style: ImpactStyle.Light });
-    }
+    private authService: AuthService,
+    private router: Router,
+    private toastController: ToastController,
+    private alertController: AlertController
+  ) {
+    addIcons({ personOutline, mailOutline, logOutOutline, refreshOutline });
   }
 
-  async deletePin() {
-    if (this.currentPin.length > 0) {
-      this.currentPin = this.currentPin.slice(0, -1);
-      await Haptics.impact({ style: ImpactStyle.Light });
-    }
+  ngOnInit() {
+    this.authService.currentUser$.subscribe(user => {
+      this.currentUser = user;
+    });
   }
 
-  async unlockVault() {
-    if (this.currentPin === this.correctPin) {
-      await Haptics.impact({ style: ImpactStyle.Heavy });
-      // Navegar a la primera tab (Generador)
-      this.navController.navigateRoot('/tabs/tab1');
-      this.currentPin = '';
-    } else {
-      await Haptics.impact({ style: ImpactStyle.Heavy });
-      const toast = await this.toastController.create({
-        message: 'PIN incorrecto',
-        duration: 2000,
-        color: 'danger'
-      });
-      toast.present();
-      this.currentPin = '';
-    }
+  async logout() {
+    const alert = await this.alertController.create({
+      header: 'Cerrar Sesión',
+      message: '¿Estás seguro de que quieres cerrar sesión?',
+      buttons: [
+        {
+          text: 'Cancelar',
+          role: 'cancel'
+        },
+        {
+          text: 'Cerrar Sesión',
+          handler: () => {
+            this.authService.logout();
+            this.router.navigate(['/login']);
+            this.showToast('Sesión cerrada exitosamente', 'success');
+          }
+        }
+      ]
+    });
+
+    await alert.present();
+  }
+
+  async regeneratePin() {
+    const alert = await this.alertController.create({
+      header: 'Regenerar PIN',
+      message: '¿Quieres generar un nuevo PIN? Se enviará a tu correo electrónico.',
+      buttons: [
+        {
+          text: 'Cancelar',
+          role: 'cancel'
+        },
+        {
+          text: 'Regenerar',
+          handler: async () => {
+            const success = await this.authService.regeneratePin();
+            if (success) {
+              this.showToast('Nuevo PIN enviado a tu correo', 'success');
+            } else {
+              this.showToast('Error enviando nuevo PIN', 'danger');
+            }
+          }
+        }
+      ]
+    });
+
+    await alert.present();
+  }
+
+  private async showToast(message: string, color: string) {
+    const toast = await this.toastController.create({
+      message: message,
+      duration: 2000,
+      color: color,
+      position: 'top'
+    });
+    toast.present();
   }
 }

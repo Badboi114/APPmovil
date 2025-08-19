@@ -1,5 +1,34 @@
 import { Component, OnInit } from '@angular/core';
-import { ModalController, AlertController, ToastController } from '@ionic/angular';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { 
+  IonContent, 
+  IonHeader, 
+  IonTitle, 
+  IonToolbar, 
+  IonCard, 
+  IonCardHeader, 
+  IonCardTitle, 
+  IonCardSubtitle,
+  IonCardContent, 
+  IonButton,
+  IonIcon,
+  IonButtons,
+  IonFab,
+  IonFabButton,
+  ModalController, 
+  AlertController, 
+  ToastController 
+} from '@ionic/angular/standalone';
+import { addIcons } from 'ionicons';
+import { 
+  lockClosedOutline, 
+  add, 
+  keyOutline, 
+  copyOutline, 
+  trashOutline, 
+  lockClosed 
+} from 'ionicons/icons';
 import { Clipboard } from '@capacitor/clipboard';
 
 interface Password {
@@ -13,7 +42,25 @@ interface Password {
 @Component({
   selector: 'app-tab2',
   templateUrl: 'tab2.page.html',
-  styleUrls: ['tab2.page.scss']
+  styleUrls: ['tab2.page.scss'],
+  imports: [
+    CommonModule,
+    FormsModule,
+    IonContent, 
+    IonHeader, 
+    IonTitle, 
+    IonToolbar, 
+    IonCard, 
+    IonCardHeader, 
+    IonCardTitle, 
+    IonCardSubtitle,
+    IonCardContent, 
+    IonButton,
+    IonIcon,
+    IonButtons,
+    IonFab,
+    IonFabButton
+  ]
 })
 export class Tab2Page implements OnInit {
   passwords: Password[] = [];
@@ -22,7 +69,16 @@ export class Tab2Page implements OnInit {
     private modalController: ModalController,
     private alertController: AlertController,
     private toastController: ToastController
-  ) {}
+  ) {
+    addIcons({ 
+      lockClosedOutline, 
+      add, 
+      keyOutline, 
+      copyOutline, 
+      trashOutline, 
+      lockClosed 
+    });
+  }
 
   ngOnInit() {
     this.loadPasswords();
