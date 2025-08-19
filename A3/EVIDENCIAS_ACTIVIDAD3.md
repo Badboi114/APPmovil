@@ -44,10 +44,10 @@ A3/
 5. **Datos**: Array de perfiles con información profesional
 
 ## Cumplimiento de Criterios
-✅ **Copia del Commit en Github**: Commit 3f88e325 subido exitosamente  
-✅ **Modificación de configuración**: package.json actualizado  
-✅ **Cambio realizado**: Estructura completamente diferente implementada  
-✅ **Evidencia en Github**: Proyecto disponible en https://github.com/Badboi114/APPmovil  
+ **Copia del Commit en Github**: Commit 3f88e325 subido exitosamente  
+ **Modificación de configuración**: package.json actualizado  
+ **Cambio realizado**: Estructura completamente diferente implementada  
+ **Evidencia en Github**: Proyecto disponible en https://github.com/Badboi114/APPmovil  
 
 ## Estado Git Final
 ```
