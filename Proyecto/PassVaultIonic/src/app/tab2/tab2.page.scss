@@ -1,0 +1,276 @@
+.vault-content {
+  --background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+}
+
+.vault-container {
+  padding: 20px;
+  min-height: 100vh;
+
+  h2 {
+    color: white;
+    text-align: center;
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+
+  p {
+    color: rgba(255, 255, 255, 0.8);
+    text-align: center;
+    margin-bottom: 20px;
+  }
+}
+
+.empty-vault {
+  text-align: center;
+  padding: 60px 20px;
+  color: white;
+
+  ion-icon {
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 20px;
+  }
+
+  h3 {
+    color: white;
+    margin-bottom: 10px;
+  }
+
+  p {
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 30px;
+  }
+
+  ion-button {
+    --color: white;
+    --border-color: white;
+  }
+}
+
+.password-item {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  margin-bottom: 16px;
+  overflow: hidden;
+
+  &.wifi-card {
+    border-left: 4px solid var(--ion-color-primary);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(230, 245, 255, 0.95) 100%);
+  }
+}
+
+.card-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+
+  .title-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+
+    ion-icon {
+      font-size: 24px;
+    }
+
+    ion-card-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0;
+      font-size: 1.2em;
+      font-weight: 600;
+      color: #333;
+
+      ion-icon {
+        font-size: 18px;
+      }
+    }
+
+    ion-card-subtitle {
+      margin: 0;
+      color: #666;
+      font-size: 0.9em;
+    }
+  }
+
+  .security-badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: rgba(40, 167, 69, 0.1);
+    border-radius: 12px;
+    font-size: 0.8em;
+    color: var(--ion-color-success);
+    font-weight: 500;
+
+    ion-icon {
+      font-size: 14px;
+    }
+  }
+}
+
+.password-section {
+  margin-bottom: 20px;
+
+  .password-display {
+    margin-bottom: 15px;
+
+    .password-label {
+      display: block;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 8px;
+      font-size: 0.9em;
+    }
+
+    .password-value {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #f8f9fa;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #e9ecef;
+
+      .password-text {
+        font-family: 'Courier New', monospace;
+        font-size: 14px;
+        color: #2c3e50;
+        word-break: break-all;
+        flex: 1;
+      }
+
+      ion-button {
+        --color: #666;
+        margin: 0;
+        min-width: auto;
+      }
+    }
+  }
+
+  .encrypted-section {
+    margin-bottom: 15px;
+
+    .encrypted-label {
+      display: block;
+      font-weight: 500;
+      color: #28a745;
+      margin-bottom: 8px;
+      font-size: 0.85em;
+    }
+
+    .encrypted-preview {
+      background: #e8f5e8;
+      padding: 8px;
+      border-radius: 6px;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+      word-break: break-all;
+    }
+  }
+
+  .wifi-info {
+    margin-bottom: 10px;
+  }
+
+  .category-section {
+    margin-bottom: 10px;
+  }
+
+  .date-section {
+    color: #999;
+    font-size: 0.8em;
+  }
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #e9ecef;
+
+  ion-button {
+    --color: #666;
+    font-size: 0.85em;
+    min-height: 36px;
+
+    &[color="secondary"] {
+      --color: var(--ion-color-secondary);
+    }
+
+    &[color="danger"] {
+      --color: var(--ion-color-danger);
+    }
+
+    ion-icon {
+      font-size: 16px;
+    }
+  }
+}
+
+ion-chip {
+  font-size: 0.8em;
+  height: 28px;
+
+  ion-icon {
+    font-size: 14px;
+  }
+
+  ion-label {
+    font-weight: 500;
+  }
+}
+
+ion-fab-button {
+  --background: var(--ion-color-primary);
+  --color: white;
+  --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+
+  &:hover {
+    --box-shadow: 0 6px 25px rgba(0, 0, 0, 0.4);
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .vault-container {
+    padding: 15px;
+  }
+
+  .card-header-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+
+    .security-badge {
+      align-self: flex-end;
+    }
+  }
+
+  .action-buttons {
+    flex-direction: column;
+
+    ion-button {
+      width: 100%;
+      justify-content: flex-start;
+    }
+  }
+
+  .password-value {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+
+    ion-button {
+      align-self: flex-end;
+    }
+  }
+}

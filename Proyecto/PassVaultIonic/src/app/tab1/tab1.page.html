@@ -2,51 +2,139 @@
   <ion-toolbar color="primary">
     <ion-title>
       <ion-icon name="key-outline"></ion-icon>
-      Generador
+      Generador de Contraseñas
     </ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true" class="generator-content">
   <div class="generator-container">
-    <h2>Generador de Contraseñas</h2>
-    <p>Crea una contraseña fuerte y segura.</p>
+    <h2>Generador de Contraseñas Seguras</h2>
+    <p>Crea contraseñas fuertes y cifradas para máxima seguridad.</p>
 
+    <!-- Contraseña Generada -->
     <ion-card class="password-output-card">
       <ion-card-content>
+        <div class="password-header">
+          <h3>Contraseña Generada</h3>
+          <ion-button fill="clear" (click)="copyPassword()" class="copy-btn">
+            <ion-icon name="copy-outline"></ion-icon>
+          </ion-button>
+        </div>
         <div class="password-display" [innerHTML]="generatedPassword"></div>
-        <ion-button fill="clear" (click)="copyPassword()" class="copy-btn">
-          <ion-icon name="copy-outline"></ion-icon>
-        </ion-button>
+        
+        <!-- Indicador de Fortaleza -->
+        <div *ngIf="passwordStrength" class="strength-indicator">
+          <ion-label>Fortaleza: {{passwordStrength.level}}</ion-label>
+          <ion-progress-bar [value]="getStrengthValue()" [color]="getStrengthColor()"></ion-progress-bar>
+        </div>
       </ion-card-content>
     </ion-card>
 
+    <!-- Contraseña Cifrada -->
+    <ion-card *ngIf="encryptedPassword" class="encrypted-card">
+      <ion-card-content>
+        <div class="password-header">
+          <h3>
+            <ion-icon name="shield-outline"></ion-icon>
+            Contraseña Cifrada (AES-256)
+          </h3>
+          <ion-button fill="clear" (click)="copyEncryptedPassword()" class="copy-btn">
+            <ion-icon name="copy-outline"></ion-icon>
+          </ion-button>
+        </div>
+        <div class="encrypted-display">{{encryptedPassword}}</div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Configuraciones -->
     <ion-card>
       <ion-card-content>
+        <!-- Tipo de Contraseña -->
         <ion-item>
-          <ion-label>Longitud de Contraseña: {{passwordLength}}</ion-label>
+          <ion-label>Tipo de Contraseña</ion-label>
+          <ion-select [(ngModel)]="passwordType" (ionChange)="onPasswordTypeChange()">
+            <ion-select-option value="general">General</ion-select-option>
+            <ion-select-option value="wpa">
+              <ion-icon name="wifi-outline"></ion-icon>
+              WPA Personal
+            </ion-select-option>
+            <ion-select-option value="wpa2">
+              <ion-icon name="wifi-outline"></ion-icon>
+              WPA2 Personal
+            </ion-select-option>
+            <ion-select-option value="passphrase">Frase de Contraseña</ion-select-option>
+          </ion-select>
+        </ion-item>
+
+        <!-- Longitud de Contraseña -->
+        <ion-item *ngIf="passwordType !== 'passphrase'">
+          <ion-label>
+            Longitud: {{passwordLength}}
+            <span *ngIf="passwordType === 'wpa' || passwordType === 'wpa2'">(mín. 16 para WiFi)</span>
+          </ion-label>
         </ion-item>
         <ion-range 
+          *ngIf="passwordType !== 'passphrase'"
           [(ngModel)]="passwordLength" 
-          min="4" 
-          max="50" 
+          [min]="passwordType === 'wpa' || passwordType === 'wpa2' ? 16 : 4" 
+          [max]="passwordType === 'wpa' || passwordType === 'wpa2' ? 63 : 50" 
           step="1"
           color="primary">
         </ion-range>
 
-        <ion-item>
-          <ion-checkbox [(ngModel)]="includeNumbers"></ion-checkbox>
-          <ion-label class="ion-margin-start">Incluir Números</ion-label>
+        <!-- Número de Palabras para Passphrase -->
+        <ion-item *ngIf="passwordType === 'passphrase'">
+          <ion-label>Número de Palabras: {{passwordLength}}</ion-label>
         </ion-item>
+        <ion-range 
+          *ngIf="passwordType === 'passphrase'"
+          [(ngModel)]="passwordLength" 
+          min="3" 
+          max="8" 
+          step="1"
+          color="primary">
+        </ion-range>
 
-        <ion-item>
-          <ion-checkbox [(ngModel)]="includeSymbols"></ion-checkbox>
-          <ion-label class="ion-margin-start">Incluir Símbolos</ion-label>
-        </ion-item>
+        <!-- Opciones de Caracteres (solo para general) -->
+        <div *ngIf="passwordType === 'general'">
+          <ion-item>
+            <ion-checkbox [(ngModel)]="includeUppercase"></ion-checkbox>
+            <ion-label class="ion-margin-start">Incluir Mayúsculas</ion-label>
+          </ion-item>
+
+          <ion-item>
+            <ion-checkbox [(ngModel)]="includeLowercase"></ion-checkbox>
+            <ion-label class="ion-margin-start">Incluir Minúsculas</ion-label>
+          </ion-item>
+
+          <ion-item>
+            <ion-checkbox [(ngModel)]="includeNumbers"></ion-checkbox>
+            <ion-label class="ion-margin-start">Incluir Números</ion-label>
+          </ion-item>
+
+          <ion-item>
+            <ion-checkbox [(ngModel)]="includeSymbols"></ion-checkbox>
+            <ion-label class="ion-margin-start">Incluir Símbolos</ion-label>
+          </ion-item>
+        </div>
+
+        <!-- Información WPA/WPA2 -->
+        <div *ngIf="passwordType === 'wpa' || passwordType === 'wpa2'" class="wpa-info">
+          <p><strong>⚡ Configuración Optimizada para WiFi:</strong></p>
+          <ul>
+            <li>Longitud: 16-63 caracteres (recomendado: 16+)</li>
+            <li>Incluye mayúsculas, minúsculas, números y símbolos</li>
+            <li>Compatible con todos los dispositivos</li>
+            <li>Cifrado automático con AES-256</li>
+          </ul>
+        </div>
 
         <ion-button expand="block" (click)="generatePassword()" class="generate-btn">
           <ion-icon name="refresh-outline" slot="start"></ion-icon>
-          Generar Contraseña
+          <span *ngIf="passwordType === 'wpa' || passwordType === 'wpa2'">Generar Contraseña WiFi</span>
+          <span *ngIf="passwordType === 'passphrase'">Generar Frase de Contraseña</span>
+          <span *ngIf="passwordType === 'general'">Generar Contraseña</span>
         </ion-button>
       </ion-card-content>
     </ion-card>

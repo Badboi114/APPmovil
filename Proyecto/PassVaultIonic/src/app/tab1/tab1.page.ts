@@ -1,7 +1,10 @@
 import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ToastController } from '@ionic/angular';
 import { Clipboard } from '@capacitor/clipboard';
+import { PasswordGenerator } from '../services/password-generator';
+import { EncryptionService } from '../services/encryption.service';
 import { 
   IonHeader, 
   IonToolbar, 
@@ -14,16 +17,20 @@ import {
   IonRange, 
   IonCheckbox, 
   IonButton, 
-  IonIcon 
+  IonIcon,
+  IonSelect,
+  IonSelectOption,
+  IonProgressBar
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { keyOutline, copyOutline, refreshOutline } from 'ionicons/icons';
+import { keyOutline, copyOutline, refreshOutline, wifiOutline, shieldOutline } from 'ionicons/icons';
 
 @Component({
   selector: 'app-tab1',
   templateUrl: 'tab1.page.html',
   styleUrls: ['tab1.page.scss'],
   imports: [
+    CommonModule,
     FormsModule,
     IonHeader, 
     IonToolbar, 
@@ -36,36 +43,62 @@ import { keyOutline, copyOutline, refreshOutline } from 'ionicons/icons';
     IonRange, 
     IonCheckbox, 
     IonButton, 
-    IonIcon
+    IonIcon,
+    IonSelect,
+    IonSelectOption,
+    IonProgressBar
   ]
 })
 export class Tab1Page {
-  passwordLength = 12;
+  passwordLength = 16;
   includeNumbers = true;
   includeSymbols = true;
+  includeUppercase = true;
+  includeLowercase = true;
+  passwordType: 'general' | 'wpa' | 'wpa2' | 'passphrase' = 'general';
   generatedPassword = "Haz clic en 'Generar'...";
+  encryptedPassword = '';
+  passwordStrength: any = null;
 
-  constructor(private toastController: ToastController) {
-    addIcons({ keyOutline, copyOutline, refreshOutline });
+  constructor(
+    private toastController: ToastController,
+    private passwordGenerator: PasswordGenerator,
+    private encryptionService: EncryptionService
+  ) {
+    addIcons({ keyOutline, copyOutline, refreshOutline, wifiOutline, shieldOutline });
   }
 
   generatePassword() {
-    let charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    
-    if (this.includeNumbers) {
-      charset += '0123456789';
-    }
-    
-    if (this.includeSymbols) {
-      charset += '!@#$%^&*()_+-=[]{}|;:,.<>?';
-    }
-    
     let password = '';
-    for (let i = 0; i < this.passwordLength; i++) {
-      password += charset.charAt(Math.floor(Math.random() * charset.length));
+
+    if (this.passwordType === 'passphrase') {
+      password = this.passwordGenerator.generatePassphrase(4, '-');
+    } else if (this.passwordType === 'wpa' || this.passwordType === 'wpa2') {
+      // Para WPA/WPA2, usar longitud mínima de 16 caracteres para mayor seguridad
+      const wpaLength = Math.max(16, this.passwordLength);
+      password = this.passwordGenerator.generateWPAPassword(wpaLength);
+    } else {
+      password = this.passwordGenerator.generatePassword({
+        length: this.passwordLength,
+        includeNumbers: this.includeNumbers,
+        includeSymbols: this.includeSymbols,
+        includeUppercase: this.includeUppercase,
+        includeLowercase: this.includeLowercase,
+        type: this.passwordType
+      });
     }
-    
+
     this.generatedPassword = password;
+    
+    // Cifrar la contraseña generada
+    try {
+      this.encryptedPassword = this.encryptionService.encryptPassword(password);
+    } catch (error) {
+      console.error('Error al cifrar la contraseña:', error);
+    }
+
+    // Evaluar fortaleza
+    this.passwordStrength = this.passwordGenerator.evaluatePasswordStrength(password);
   }
 
   async copyPassword() {
@@ -92,5 +125,60 @@ export class Tab1Page {
         toast.present();
       }
     }
+  }
+
+  async copyEncryptedPassword() {
+    if (this.encryptedPassword) {
+      try {
+        await Clipboard.write({
+          string: this.encryptedPassword
+        });
+        
+        const toast = await this.toastController.create({
+          message: 'Contraseña cifrada copiada al portapapeles',
+          duration: 2000,
+          color: 'success'
+        });
+        toast.present();
+      } catch (error) {
+        navigator.clipboard.writeText(this.encryptedPassword);
+        const toast = await this.toastController.create({
+          message: 'Contraseña cifrada copiada al portapapeles',
+          duration: 2000,
+          color: 'success'
+        });
+        toast.present();
+      }
+    }
+  }
+
+  onPasswordTypeChange() {
+    // Ajustar configuraciones según el tipo de contraseña
+    if (this.passwordType === 'wpa' || this.passwordType === 'wpa2') {
+      this.passwordLength = Math.max(16, this.passwordLength);
+      this.includeNumbers = true;
+      this.includeSymbols = true;
+      this.includeUppercase = true;
+      this.includeLowercase = true;
+    } else if (this.passwordType === 'passphrase') {
+      this.passwordLength = 4; // Número de palabras
+    }
+  }
+
+  getStrengthColor(): string {
+    if (!this.passwordStrength) return 'medium';
+    
+    switch (this.passwordStrength.level) {
+      case 'very-weak': return 'danger';
+      case 'weak': return 'warning';
+      case 'fair': return 'medium';
+      case 'good': return 'success';
+      case 'strong': return 'primary';
+      default: return 'medium';
+    }
+  }
+
+  getStrengthValue(): number {
+    return this.passwordStrength ? this.passwordStrength.score / 100 : 0;
   }
 }

@@ -1,0 +1,226 @@
+.generator-content {
+  --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.generator-container {
+  padding: 20px;
+  min-height: 100vh;
+
+  h2 {
+    color: white;
+    text-align: center;
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+
+  p {
+    color: rgba(255, 255, 255, 0.8);
+    text-align: center;
+    margin-bottom: 20px;
+  }
+}
+
+.password-output-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+
+  .password-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+
+    h3 {
+      margin: 0;
+      color: #333;
+      font-size: 1.2em;
+      font-weight: 600;
+    }
+  }
+
+  .password-display {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 12px;
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
+    font-weight: 600;
+    color: #2c3e50;
+    border: 2px solid #e9ecef;
+    word-break: break-all;
+    min-height: 24px;
+    margin-bottom: 15px;
+  }
+
+  .copy-btn {
+    --color: #007bff;
+    
+    ion-icon {
+      font-size: 20px;
+    }
+  }
+
+  .strength-indicator {
+    margin-top: 15px;
+
+    ion-label {
+      color: #666;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      display: block;
+      text-transform: capitalize;
+    }
+
+    ion-progress-bar {
+      height: 8px;
+      border-radius: 4px;
+    }
+  }
+}
+
+.encrypted-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  border: 2px solid #28a745;
+
+  .password-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+
+    h3 {
+      margin: 0;
+      color: #28a745;
+      font-size: 1.1em;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      ion-icon {
+        font-size: 20px;
+      }
+    }
+  }
+
+  .encrypted-display {
+    background: #e8f5e8;
+    padding: 15px;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+    word-break: break-all;
+    max-height: 100px;
+    overflow-y: auto;
+  }
+}
+
+.wpa-info {
+  background: #e3f2fd;
+  padding: 15px;
+  border-radius: 12px;
+  margin-top: 15px;
+  border-left: 4px solid #2196f3;
+
+  p {
+    margin: 0 0 10px 0;
+    color: #1565c0;
+    font-weight: 600;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 20px;
+    color: #1976d2;
+
+    li {
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+  }
+}
+
+ion-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  
+  ion-card-content {
+    padding: 20px;
+  }
+}
+
+ion-item {
+  --background: transparent;
+  --border-width: 0 0 1px 0;
+  --border-color: #e9ecef;
+  --padding-start: 0;
+  --padding-end: 0;
+
+  ion-label {
+    font-weight: 500;
+    color: #333;
+  }
+}
+
+ion-checkbox {
+  --checkmark-color: white;
+  --background-checked: #007bff;
+  --border-color-checked: #007bff;
+}
+
+ion-range {
+  --bar-background: #e9ecef;
+  --bar-background-active: #007bff;
+  --knob-background: #007bff;
+  --knob-border: 2px solid white;
+  --knob-box-shadow: 0 3px 10px rgba(0, 123, 255, 0.3);
+}
+
+ion-select {
+  --color: #333;
+  --placeholder-color: #666;
+}
+
+.generate-btn {
+  --background: linear-gradient(45deg, #007bff, #0056b3);
+  --color: white;
+  --border-radius: 12px;
+  --box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+  margin-top: 20px;
+  font-weight: 600;
+  height: 50px;
+
+  ion-icon {
+    margin-right: 8px;
+  }
+
+  &:hover {
+    --box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .generator-container {
+    padding: 15px;
+  }
+
+  .password-display {
+    font-size: 14px;
+    padding: 15px;
+  }
+
+  .encrypted-display {
+    font-size: 11px;
+    padding: 12px;
+  }
+}

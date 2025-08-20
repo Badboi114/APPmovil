@@ -16,6 +16,8 @@ import {
   IonButtons,
   IonFab,
   IonFabButton,
+  IonChip,
+  IonLabel,
   ModalController, 
   AlertController, 
   ToastController 
@@ -27,16 +29,24 @@ import {
   keyOutline, 
   copyOutline, 
   trashOutline, 
-  lockClosed 
+  lockClosed,
+  wifiOutline,
+  shieldOutline,
+  eyeOutline,
+  eyeOffOutline
 } from 'ionicons/icons';
 import { Clipboard } from '@capacitor/clipboard';
+import { EncryptionService } from '../services/encryption.service';
 
 interface Password {
   id: number;
   siteName: string;
   username: string;
   password: string;
+  encryptedPassword?: string;
   createdAt: string;
+  category?: 'general' | 'wifi' | 'social' | 'work' | 'other';
+  isWPA?: boolean;
 }
 
 @Component({
@@ -59,16 +69,20 @@ interface Password {
     IonIcon,
     IonButtons,
     IonFab,
-    IonFabButton
+    IonFabButton,
+    IonChip,
+    IonLabel
   ]
 })
 export class Tab2Page implements OnInit {
   passwords: Password[] = [];
+  showPasswords: { [key: number]: boolean } = {};
 
   constructor(
     private modalController: ModalController,
     private alertController: AlertController,
-    private toastController: ToastController
+    private toastController: ToastController,
+    private encryptionService: EncryptionService
   ) {
     addIcons({ 
       lockClosedOutline, 
@@ -76,7 +90,11 @@ export class Tab2Page implements OnInit {
       keyOutline, 
       copyOutline, 
       trashOutline, 
-      lockClosed 
+      lockClosed,
+      wifiOutline,
+      shieldOutline,
+      eyeOutline,
+      eyeOffOutline
     });
   }
 
@@ -88,6 +106,26 @@ export class Tab2Page implements OnInit {
     const stored = localStorage.getItem('passvault_passwords');
     if (stored) {
       this.passwords = JSON.parse(stored);
+      // Migrar contraseñas existentes si no tienen cifrado
+      this.migrateExistingPasswords();
+    }
+  }
+
+  migrateExistingPasswords() {
+    let needsSave = false;
+    this.passwords.forEach(password => {
+      if (!password.encryptedPassword && password.password) {
+        try {
+          password.encryptedPassword = this.encryptionService.encryptPassword(password.password);
+          needsSave = true;
+        } catch (error) {
+          console.error('Error al migrar contraseña:', error);
+        }
+      }
+    });
+    
+    if (needsSave) {
+      this.savePasswords();
     }
   }
 
@@ -102,17 +140,22 @@ export class Tab2Page implements OnInit {
         {
           name: 'siteName',
           type: 'text',
-          placeholder: 'Nombre del sitio'
+          placeholder: 'Nombre del sitio (ej: Mi Router WiFi)'
         },
         {
           name: 'username',
           type: 'text',
-          placeholder: 'Usuario/Email'
+          placeholder: 'Usuario/Email/SSID'
         },
         {
           name: 'password',
           type: 'password',
           placeholder: 'Contraseña'
+        },
+        {
+          name: 'category',
+          type: 'text',
+          placeholder: 'Categoría (wifi, social, work, etc.)'
         }
       ],
       buttons: [
@@ -123,7 +166,7 @@ export class Tab2Page implements OnInit {
         {
           text: 'Guardar',
           handler: (data) => {
-            this.addPassword(data.siteName, data.username, data.password);
+            this.addPassword(data.siteName, data.username, data.password, data.category);
           }
         }
       ]
@@ -132,27 +175,98 @@ export class Tab2Page implements OnInit {
     await alert.present();
   }
 
-  addPassword(siteName: string, username: string, password: string) {
+  addPassword(siteName: string, username: string, password: string, category: string = 'general') {
     if (siteName && username && password) {
-      const newPassword: Password = {
-        id: Date.now(),
-        siteName,
-        username,
-        password,
-        createdAt: new Date().toISOString()
-      };
+      try {
+        const encryptedPassword = this.encryptionService.encryptPassword(password);
+        const isWiFiPassword = category?.toLowerCase().includes('wifi') || 
+                              siteName.toLowerCase().includes('wifi') || 
+                              siteName.toLowerCase().includes('router');
 
-      this.passwords.push(newPassword);
-      this.savePasswords();
-      this.showToast('Contraseña guardada exitosamente');
+        const newPassword: Password = {
+          id: Date.now(),
+          siteName,
+          username,
+          password,
+          encryptedPassword,
+          createdAt: new Date().toISOString(),
+          category: category as any || 'general',
+          isWPA: isWiFiPassword
+        };
+
+        this.passwords.push(newPassword);
+        this.savePasswords();
+        this.showToast('Contraseña guardada y cifrada exitosamente');
+      } catch (error) {
+        console.error('Error al cifrar contraseña:', error);
+        this.showToast('Error al guardar la contraseña');
+      }
     }
   }
 
   async copyPassword(password: string) {
-    await Clipboard.write({
-      string: password
-    });
-    this.showToast('Contraseña copiada al portapapeles');
+    try {
+      await Clipboard.write({
+        string: password
+      });
+      this.showToast('Contraseña copiada al portapapeles');
+    } catch (error) {
+      console.error('Error al copiar:', error);
+      this.showToast('Error al copiar la contraseña');
+    }
+  }
+
+  async copyEncryptedPassword(encryptedPassword: string) {
+    try {
+      await Clipboard.write({
+        string: encryptedPassword
+      });
+      this.showToast('Contraseña cifrada copiada al portapapeles');
+    } catch (error) {
+      console.error('Error al copiar:', error);
+      this.showToast('Error al copiar la contraseña cifrada');
+    }
+  }
+
+  togglePasswordVisibility(id: number) {
+    this.showPasswords[id] = !this.showPasswords[id];
+  }
+
+  getDisplayPassword(password: Password): string {
+    if (this.showPasswords[password.id]) {
+      return password.password;
+    }
+    return '•'.repeat(password.password.length);
+  }
+
+  getDecryptedPassword(password: Password): string {
+    if (password.encryptedPassword) {
+      try {
+        return this.encryptionService.decryptPassword(password.encryptedPassword);
+      } catch (error) {
+        console.error('Error al descifrar:', error);
+        return password.password; // Fallback a la contraseña sin cifrar
+      }
+    }
+    return password.password;
+  }
+
+  getCategoryIcon(category?: string): string {
+    switch (category) {
+      case 'wifi': return 'wifi-outline';
+      case 'social': return 'people-outline';
+      case 'work': return 'briefcase-outline';
+      default: return 'key-outline';
+    }
+  }
+
+  getCategoryColor(category?: string): string {
+    switch (category) {
+      case 'wifi': return 'primary';
+      case 'social': return 'secondary';
+      case 'work': return 'tertiary';
+      default: return 'medium';
+    }
   }
 
   async deletePassword(id: number) {

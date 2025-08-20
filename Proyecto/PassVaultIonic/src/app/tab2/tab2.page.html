@@ -2,7 +2,7 @@
   <ion-toolbar color="primary">
     <ion-title>
       <ion-icon name="lock-closed-outline"></ion-icon>
-      Bóveda
+      Bóveda Segura
     </ion-title>
     <ion-buttons slot="end">
       <ion-button (click)="openAddModal()">
@@ -14,31 +14,99 @@
 
 <ion-content [fullscreen]="true" class="vault-content">
   <div class="vault-container">
-    <h2>Bóveda de Contraseñas</h2>
-    <p>Tus contraseñas guardadas.</p>
+    <h2>Bóveda de Contraseñas Cifradas</h2>
+    <p>Tus contraseñas están protegidas con cifrado AES-256.</p>
 
     <div *ngIf="passwords.length === 0" class="empty-vault">
-      <ion-icon name="key-outline" size="large"></ion-icon>
+      <ion-icon name="shield-outline" size="large"></ion-icon>
       <h3>Tu bóveda está vacía.</h3>
-      <p>Añade una contraseña para empezar.</p>
+      <p>Añade una contraseña para empezar a proteger tus datos.</p>
       <ion-button (click)="openAddModal()" fill="outline">
         <ion-icon name="add" slot="start"></ion-icon>
-        Añadir Nueva
+        Añadir Nueva Contraseña
       </ion-button>
     </div>
 
-    <ion-card *ngFor="let password of passwords" class="password-item">
+    <ion-card *ngFor="let password of passwords" class="password-item" [class.wifi-card]="password.isWPA">
       <ion-card-header>
-        <ion-card-title>{{password.siteName}}</ion-card-title>
-        <ion-card-subtitle>{{password.username}}</ion-card-subtitle>
+        <div class="card-header-content">
+          <div class="title-section">
+            <ion-icon [name]="getCategoryIcon(password.category)" [color]="getCategoryColor(password.category)"></ion-icon>
+            <div>
+              <ion-card-title>
+                {{password.siteName}}
+                <ion-icon *ngIf="password.isWPA" name="wifi-outline" color="primary"></ion-icon>
+              </ion-card-title>
+              <ion-card-subtitle>{{password.username}}</ion-card-subtitle>
+            </div>
+          </div>
+          <div class="security-badge" *ngIf="password.encryptedPassword">
+            <ion-icon name="shield-outline" color="success"></ion-icon>
+            <span>Cifrado</span>
+          </div>
+        </div>
       </ion-card-header>
+      
       <ion-card-content>
-        <ion-button fill="clear" (click)="copyPassword(password.password)">
-          <ion-icon name="copy-outline"></ion-icon>
-        </ion-button>
-        <ion-button fill="clear" color="danger" (click)="deletePassword(password.id)">
-          <ion-icon name="trash-outline"></ion-icon>
-        </ion-button>
+        <!-- Contraseña Visible/Oculta -->
+        <div class="password-section">
+          <div class="password-display">
+            <span class="password-label">Contraseña:</span>
+            <div class="password-value">
+              <span class="password-text">{{getDisplayPassword(password)}}</span>
+              <ion-button fill="clear" size="small" (click)="togglePasswordVisibility(password.id)">
+                <ion-icon [name]="showPasswords[password.id] ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
+              </ion-button>
+            </div>
+          </div>
+
+          <!-- Información de Cifrado -->
+          <div *ngIf="password.encryptedPassword" class="encrypted-section">
+            <span class="encrypted-label">Cifrado AES-256:</span>
+            <div class="encrypted-preview">
+              {{password.encryptedPassword.substring(0, 50)}}...
+            </div>
+          </div>
+
+          <!-- Información adicional para WiFi -->
+          <div *ngIf="password.isWPA" class="wifi-info">
+            <ion-chip color="primary">
+              <ion-icon name="wifi-outline"></ion-icon>
+              <ion-label>WPA/WPA2 Personal</ion-label>
+            </ion-chip>
+          </div>
+
+          <!-- Categoría -->
+          <div *ngIf="password.category && password.category !== 'general'" class="category-section">
+            <ion-chip [color]="getCategoryColor(password.category)">
+              <ion-icon [name]="getCategoryIcon(password.category)"></ion-icon>
+              <ion-label>{{password.category | titlecase}}</ion-label>
+            </ion-chip>
+          </div>
+
+          <!-- Fecha de creación -->
+          <div class="date-section">
+            <small>Creado: {{password.createdAt | date:'short'}}</small>
+          </div>
+        </div>
+
+        <!-- Botones de acción -->
+        <div class="action-buttons">
+          <ion-button fill="clear" (click)="copyPassword(getDecryptedPassword(password))">
+            <ion-icon name="copy-outline" slot="start"></ion-icon>
+            Copiar
+          </ion-button>
+          
+          <ion-button *ngIf="password.encryptedPassword" fill="clear" color="secondary" (click)="copyEncryptedPassword(password.encryptedPassword)">
+            <ion-icon name="shield-outline" slot="start"></ion-icon>
+            Copiar Cifrado
+          </ion-button>
+          
+          <ion-button fill="clear" color="danger" (click)="deletePassword(password.id)">
+            <ion-icon name="trash-outline" slot="start"></ion-icon>
+            Eliminar
+          </ion-button>
+        </div>
       </ion-card-content>
     </ion-card>
   </div>
