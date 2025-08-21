@@ -101,3 +101,48 @@ ion-card-title {
   margin-top: 2px;
   font-size: 1.1rem;
 }
+
+.divider-section {
+  margin: 20px 0;
+  text-align: center;
+  position: relative;
+}
+
+.divider-text {
+  margin: 0;
+  padding: 0 15px;
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--ion-color-medium);
+  font-size: 0.9rem;
+  position: relative;
+  z-index: 1;
+}
+
+.divider-section::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--ion-color-light-shade);
+  z-index: 0;
+}
+
+.google-button {
+  margin: 10px 0 20px 0;
+  --border-radius: 12px;
+  height: 48px;
+  font-weight: 600;
+  text-transform: none;
+  --border-color: var(--ion-color-danger);
+  --color: var(--ion-color-danger);
+}
+
+.google-button:hover {
+  --background: rgba(var(--ion-color-danger-rgb), 0.04);
+}
+
+.google-button ion-icon {
+  font-size: 1.2rem;
+}

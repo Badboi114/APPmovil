@@ -1,0 +1,371 @@
+import { Injectable } from '@angular/core';
+import { BehaviorSubject } from 'rxjs';
+import { EmailService } from './email.service';
+import { EncryptionService } from './encryption.service';
+import { DatabaseService, User as DBUser } from './database.service';
+import { HttpClient } from '@angular/common/http';
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  password: string;
+  pin: string;
+  createdAt: Date;
+}
+
+@Injectable({
+  providedIn: 'root'
+})
+export class AuthService {
+  private isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
+  private isUserLoggedInSubject = new BehaviorSubject<boolean>(false);
+  private currentUserSubject = new BehaviorSubject<User | null>(null);
+  
+  public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
+  public isUserLoggedIn$ = this.isUserLoggedInSubject.asObservable();
+  public currentUser$ = this.currentUserSubject.asObservable();
+
+  private readonly USERS_KEY = 'passvault_users';
+  private readonly CURRENT_USER_KEY = 'passvault_current_user';
+  private userPin: string = ''; // PIN desencriptado para uso en sesión
+
+  constructor(
+    private emailService: EmailService,
+    private encryptionService: EncryptionService,
+    private databaseService: DatabaseService,
+    private http: HttpClient
+  ) {
+    this.loadCurrentUser();
+  }
+
+  // Generar PIN aleatorio de 4 dígitos
+  private generatePin(): string {
+    return Math.floor(1000 + Math.random() * 9000).toString();
+  }
+
+  // Registro de usuario
+  async register(name: string, email: string, password: string): Promise<boolean> {
+    try {
+      // Verificar conexión con la base de datos
+      const isConnected = await this.checkDatabaseConnection();
+      
+      if (isConnected) {
+        return this.registerWithDatabase(name, email, password);
+      } else {
+        return this.registerLocally(name, email, password);
+      }
+    } catch (error) {
+      console.error('Error en registro:', error);
+      return false;
+    }
+  }
+
+  // Registro en base de datos
+  private async registerWithDatabase(name: string, email: string, password: string): Promise<boolean> {
+    try {
+      const pin = this.generatePin();
+      
+      // Encriptar contraseña y PIN
+      const passwordHash = this.encryptionService.hashUserPassword(password);
+      const pinHash = this.encryptionService.hashUserPassword(pin);
+
+      const dbUser: Omit<DBUser, 'id' | 'created_at' | 'updated_at'> = {
+        email,
+        name,
+        password_hash: passwordHash,
+        pin_hash: pinHash
+      };
+
+      // Registrar en base de datos
+      const response = await this.databaseService.registerUser(dbUser).toPromise();
+      
+      if (response?.success) {
+        // Enviar PIN por email
+        await this.emailService.sendPin(email, pin, name);
+        
+        // Guardar usuario localmente también
+        const localUser: User = {
+          id: response.user.id.toString(),
+          name,
+          email,
+          password: passwordHash,
+          pin: pinHash,
+          createdAt: new Date(response.user.created_at)
+        };
+        
+        this.saveUserLocally(localUser);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error registrando en base de datos:', error);
+      return false;
+    }
+  }
+
+  // Registro local (fallback)
+  private async registerLocally(name: string, email: string, password: string): Promise<boolean> {
+    try {
+      const users = this.getUsers();
+      
+      // Verificar si el email ya existe
+      if (users.find(user => user.email === email)) {
+        return false;
+      }
+
+      const pin = this.generatePin();
+      
+      // Encriptar contraseña y PIN
+      const passwordHash = this.encryptionService.hashUserPassword(password);
+      const pinHash = this.encryptionService.hashUserPassword(pin);
+
+      const newUser: User = {
+        id: Date.now().toString(),
+        name,
+        email,
+        password: passwordHash,
+        pin: pinHash,
+        createdAt: new Date()
+      };
+
+      users.push(newUser);
+      localStorage.setItem(this.USERS_KEY, JSON.stringify(users));
+
+      // Enviar PIN por email
+      await this.emailService.sendPin(email, pin, name);
+
+      return true;
+    } catch (error) {
+      console.error('Error en registro local:', error);
+      return false;
+    }
+  }
+
+  // Login de usuario
+  async login(email: string, password: string): Promise<boolean> {
+    try {
+      // Verificar conexión con la base de datos
+      const isConnected = await this.checkDatabaseConnection();
+      
+      if (isConnected) {
+        return this.loginWithDatabase(email, password);
+      } else {
+        return this.loginLocally(email, password);
+      }
+    } catch (error) {
+      console.error('Error en login:', error);
+      return false;
+    }
+  }
+
+  }
+
+  // Login de usuario (método principal)
+  async login(email: string, password: string): Promise<boolean> {
+    try {
+      // Verificar conexión con la base de datos
+      const isConnected = await this.checkDatabaseConnection();
+      
+      if (isConnected) {
+        return this.loginWithDatabase(email, password);
+      } else {
+        return this.loginLocally(email, password);
+      }
+    } catch (error) {
+      console.error('Error en login:', error);
+      return false;
+    }
+  }
+
+  // Login con base de datos
+  private async loginWithDatabase(email: string, password: string): Promise<boolean> {
+    try {
+      const passwordHash = this.encryptionService.hashUserPassword(password);
+      const response = await this.databaseService.loginUser(email, passwordHash).toPromise();
+      
+      if (response?.success) {
+        // Generar nuevo PIN y enviarlo por email
+        const newPin = this.generatePin();
+        
+        // Crear usuario local
+        const user: User = {
+          id: response.user.id.toString(),
+          name: response.user.name,
+          email: response.user.email,
+          password: passwordHash,
+          pin: this.encryptionService.hashUserPassword(newPin),
+          createdAt: new Date()
+        };
+
+        // Guardar usuario actual
+        localStorage.setItem(this.CURRENT_USER_KEY, JSON.stringify(user));
+        this.currentUserSubject.next(user);
+        this.isUserLoggedInSubject.next(true);
+
+        // Enviar nuevo PIN por email
+        await this.emailService.sendPin(email, newPin, user.name);
+
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error en login con base de datos:', error);
+      return false;
+    }
+  }
+
+  // Login local (fallback)
+  private async loginLocally(email: string, password: string): Promise<boolean> {
+    try {
+      const users = this.getUsers();
+      const passwordHash = this.encryptionService.hashUserPassword(password);
+      const user = users.find(u => u.email === email && u.password === passwordHash);
+
+      if (user) {
+        // Generar nuevo PIN y enviarlo por email
+        const newPin = this.generatePin();
+        const newPinHash = this.encryptionService.hashUserPassword(newPin);
+        user.pin = newPinHash;
+        
+        // Actualizar usuario en localStorage
+        const userIndex = users.findIndex(u => u.id === user.id);
+        users[userIndex] = user;
+        localStorage.setItem(this.USERS_KEY, JSON.stringify(users));
+
+        // Guardar usuario actual
+        localStorage.setItem(this.CURRENT_USER_KEY, JSON.stringify(user));
+        this.currentUserSubject.next(user);
+        this.isUserLoggedInSubject.next(true);
+
+        // Enviar nuevo PIN por email
+        await this.emailService.sendPin(email, newPin, user.name);
+
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('Error en login:', error);
+      return false;
+    }
+  }
+
+  // Autenticar con PIN
+  authenticate(pin: string): boolean {
+    const currentUser = this.getCurrentUser();
+    
+    if (currentUser) {
+      const pinHash = this.encryptionService.hashUserPassword(pin);
+      if (currentUser.pin === pinHash) {
+        this.isAuthenticatedSubject.next(true);
+        this.setUserPin(pin); // Guardar PIN desencriptado para uso en sesión
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  // Logout completo
+  logout(): void {
+    localStorage.removeItem(this.CURRENT_USER_KEY);
+    this.isAuthenticatedSubject.next(false);
+    this.isUserLoggedInSubject.next(false);
+    this.currentUserSubject.next(null);
+  }
+
+  // Verificar si está autenticado con PIN
+  isLoggedIn(): boolean {
+    return this.isAuthenticatedSubject.value;
+  }
+
+  // Verificar si hay usuario logueado
+  isUserLoggedIn(): boolean {
+    return this.isUserLoggedInSubject.value;
+  }
+
+  // Obtener usuario actual
+  getCurrentUser(): User | null {
+    return this.currentUserSubject.value;
+  }
+
+  // Cargar usuario actual desde localStorage
+  private loadCurrentUser(): void {
+    try {
+      const userJson = localStorage.getItem(this.CURRENT_USER_KEY);
+      if (userJson) {
+        const user = JSON.parse(userJson);
+        this.currentUserSubject.next(user);
+        this.isUserLoggedInSubject.next(true);
+      }
+    } catch (error) {
+      console.error('Error cargando usuario:', error);
+    }
+  }
+
+  // Obtener todos los usuarios
+  private getUsers(): User[] {
+    try {
+      const usersJson = localStorage.getItem(this.USERS_KEY);
+      return usersJson ? JSON.parse(usersJson) : [];
+    } catch (error) {
+      console.error('Error obteniendo usuarios:', error);
+      return [];
+    }
+  }
+
+  // Regenerar y enviar nuevo PIN
+  async regeneratePin(): Promise<boolean> {
+    const currentUser = this.getCurrentUser();
+    
+    if (currentUser) {
+      const newPin = this.generatePin();
+      const newPinHash = this.encryptionService.hashUserPassword(newPin);
+      currentUser.pin = newPinHash;
+
+      // Actualizar en localStorage
+      const users = this.getUsers();
+      const userIndex = users.findIndex(u => u.id === currentUser.id);
+      if (userIndex !== -1) {
+        users[userIndex] = currentUser;
+        localStorage.setItem(this.USERS_KEY, JSON.stringify(users));
+        localStorage.setItem(this.CURRENT_USER_KEY, JSON.stringify(currentUser));
+        this.currentUserSubject.next(currentUser);
+      }
+
+      // Enviar nuevo PIN por email
+      return await this.emailService.sendPin(currentUser.email, newPin, currentUser.name);
+    }
+
+    return false;
+  }
+
+  // Verificar conexión con base de datos
+  private async checkDatabaseConnection(): Promise<boolean> {
+    try {
+      await this.databaseService.checkConnection().toPromise();
+      return true;
+    } catch (error) {
+      console.warn('Base de datos no disponible, usando almacenamiento local');
+      return false;
+    }
+  }
+
+  // Guardar usuario localmente
+  private saveUserLocally(user: User): void {
+    const users = this.getUsers();
+    users.push(user);
+    localStorage.setItem(this.USERS_KEY, JSON.stringify(users));
+  }
+
+  // Obtener PIN del usuario para encriptación
+  getUserPin(): string {
+    return this.userPin;
+  }
+
+  // Establecer PIN del usuario para encriptación (después de autenticación)
+  setUserPin(pin: string): void {
+    this.userPin = pin;
+  }
+}

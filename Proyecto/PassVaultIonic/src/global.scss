@@ -163,3 +163,104 @@ ion-range {
   --bar-background-active: white;
   --knob-background: white;
 }
+
+/* Estilos para el modal del PIN - Global */
+.pin-alert {
+  .alert-wrapper {
+    border-radius: 20px !important;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3) !important;
+    max-width: 500px !important;
+    width: 90% !important;
+  }
+  
+  .alert-head {
+    background: linear-gradient(135deg, #3880ff 0%, #5260ff 100%) !important;
+    color: white !important;
+    padding: 25px 20px !important;
+    text-align: center;
+    
+    .alert-title {
+      color: white !important;
+      font-size: 1.4rem !important;
+      font-weight: 700 !important;
+      margin: 0 !important;
+    }
+  }
+  
+  .alert-message {
+    padding: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    
+    h1 {
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+      animation: pinPulse 2s ease-in-out infinite;
+    }
+  }
+  
+  .alert-button-group {
+    padding: 0 20px 20px 20px;
+    
+    .alert-button {
+      background: linear-gradient(135deg, #3880ff 0%, #5260ff 100%) !important;
+      color: white !important;
+      border-radius: 12px !important;
+      font-weight: 600 !important;
+      font-size: 1rem !important;
+      height: 48px !important;
+      margin: 0 !important;
+      border: none !important;
+      box-shadow: 0 4px 15px rgba(56, 128, 255, 0.3) !important;
+      transition: all 0.3s ease !important;
+      
+      &:hover {
+        background: linear-gradient(135deg, #2969ff 0%, #4148ff 100%) !important;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(56, 128, 255, 0.4) !important;
+      }
+    }
+  }
+}
+
+/* Animación para el PIN */
+@keyframes pinPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+/* Estilos mejorados para el PIN display */
+.pin-display {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border: 3px solid #3880ff;
+  border-radius: 15px;
+  padding: 25px;
+  margin: 20px 0;
+  box-shadow: 
+    0 4px 15px rgba(56, 128, 255, 0.2),
+    inset 0 1px 3px rgba(255, 255, 255, 0.8);
+}
+
+.pin-number {
+  color: #3880ff !important;
+  font-size: 3.5rem !important;
+  font-weight: 900 !important;
+  letter-spacing: 20px !important;
+  font-family: 'Courier New', 'Monaco', monospace !important;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+  animation: pinGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes pinGlow {
+  from {
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  to {
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1), 0 0 10px rgba(56, 128, 255, 0.3);
+  }
+}

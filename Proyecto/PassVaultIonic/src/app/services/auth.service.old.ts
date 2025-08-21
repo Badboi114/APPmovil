@@ -28,7 +28,7 @@ export class AuthService {
 
   private readonly USERS_KEY = 'passvault_users';
   private readonly CURRENT_USER_KEY = 'passvault_current_user';
-  private userPin: string = '';
+  private userPin: string = ''; // PIN desencriptado para uso en sesión
 
   constructor(
     private emailService: EmailService,
@@ -68,7 +68,7 @@ export class AuthService {
     return Math.floor(1000 + Math.random() * 9000).toString();
   }
 
-  // Registro de usuario
+  // Registro de usuario (SIN verificación por email)
   async register(name: string, email: string, password: string): Promise<{success: boolean, pin?: string}> {
     try {
       const existingUsers = this.getUsers();
@@ -93,6 +93,31 @@ export class AuthService {
         createdAt: new Date()
       };
 
+      // Intentar registro en base de datos si está disponible
+      const isConnected = await this.checkDatabaseConnection();
+      
+      if (isConnected) {
+        console.log('Registrando usuario en base de datos...');
+        
+        const dbUser: Omit<DBUser, 'id' | 'created_at' | 'updated_at'> = {
+          email: newUser.email,
+          name: newUser.name,
+          password_hash: passwordHash,
+          pin_hash: pinHash
+        };
+
+        try {
+          const response = await this.databaseService.registerUser(dbUser).toPromise();
+          
+          if (response?.success) {
+            newUser.id = response.user.id.toString();
+            newUser.createdAt = new Date(response.user.created_at);
+          }
+        } catch (dbError) {
+          console.log('Error en BD, continuando con registro local:', dbError);
+        }
+      }
+
       // Guardar usuario localmente
       existingUsers.push(newUser);
       localStorage.setItem(this.USERS_KEY, JSON.stringify(existingUsers));
@@ -108,8 +133,62 @@ export class AuthService {
     }
   }
 
-  // Login de usuario
+  // Login de usuario (SIN verificación por PIN)
   async login(email: string, password: string): Promise<boolean> {
+    try {
+      // Verificar conexión con la base de datos
+      const isConnected = await this.checkDatabaseConnection();
+      
+      if (isConnected) {
+        return this.loginWithDatabase(email, password);
+      } else {
+        return this.loginLocally(email, password);
+      }
+    } catch (error) {
+      console.error('Error en login:', error);
+      return false;
+    }
+  }
+
+  // Login con base de datos (SIN PIN)
+  private async loginWithDatabase(email: string, password: string): Promise<boolean> {
+    try {
+      const passwordHash = this.encryptionService.hashUserPassword(password);
+      
+      const response = await this.databaseService.loginUser(email, passwordHash).toPromise();
+      
+      if (response?.success && response.user) {
+        const dbUser = response.user;
+        
+        // Convertir usuario de BD a formato local
+        const user: User = {
+          id: dbUser.id.toString(),
+          name: dbUser.name,
+          email: dbUser.email,
+          password: dbUser.password_hash,
+          pin: dbUser.pin_hash,
+          createdAt: new Date(dbUser.created_at)
+        };
+
+        // Solo marcar como logged in, NO como authenticated (requiere PIN)
+        localStorage.setItem(this.CURRENT_USER_KEY, JSON.stringify(user));
+        this.currentUserSubject.next(user);
+        this.isUserLoggedInSubject.next(true);
+        this.isAuthenticatedSubject.next(false); // Requiere PIN
+
+        console.log('✅ Login con BD exitoso - PIN requerido');
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Error en login con BD:', error);
+      return false;
+    }
+  }
+
+  // Login local (localStorage) SIN PIN
+  private async loginLocally(email: string, password: string): Promise<boolean> {
     try {
       const users = this.getUsers();
       const passwordHash = this.encryptionService.hashUserPassword(password);
@@ -117,13 +196,13 @@ export class AuthService {
       const user = users.find(u => u.email === email && u.password === passwordHash);
       
       if (user) {
-        // Usuario encontrado - logueado pero necesita PIN
+        // Solo marcar como logged in, NO como authenticated (requiere PIN)
         localStorage.setItem(this.CURRENT_USER_KEY, JSON.stringify(user));
         this.currentUserSubject.next(user);
         this.isUserLoggedInSubject.next(true);
         this.isAuthenticatedSubject.next(false); // Requiere PIN
 
-        console.log('✅ Login exitoso - PIN requerido');
+        console.log('✅ Login local exitoso - PIN requerido');
         return true;
       }
       
@@ -135,7 +214,7 @@ export class AuthService {
     }
   }
 
-  // Autenticación con PIN
+  // Autenticación con PIN (RESTAURADA)
   authenticate(pin: string): boolean {
     try {
       const currentUser = this.getCurrentUser();
@@ -172,7 +251,7 @@ export class AuthService {
 
   // Verificar si está autenticado
   isLoggedIn(): boolean {
-    return this.isAuthenticatedSubject.value;
+    return this.isUserLoggedInSubject.value;
   }
 
   // Verificar si el usuario está logueado
@@ -196,71 +275,38 @@ export class AuthService {
     }
   }
 
-  // Actualizar usuario
-  updateUser(updatedUser: Partial<User>): boolean {
-    try {
-      const currentUser = this.getCurrentUser();
-      if (!currentUser) {
-        return false;
-      }
+  // Regenerar PIN (ELIMINADO - ya no se usa)
+  async regeneratePin(): Promise<boolean> {
+    console.log('✅ Regeneración de PIN eliminada - ya no es necesaria');
+    return true;
+  }
 
-      // Actualizar usuario actual
-      const updatedUserData = { ...currentUser, ...updatedUser };
-      
-      // Actualizar en la lista de usuarios
-      const users = this.getUsers();
-      const userIndex = users.findIndex(u => u.id === currentUser.id);
-      
-      if (userIndex !== -1) {
-        users[userIndex] = updatedUserData;
-        localStorage.setItem(this.USERS_KEY, JSON.stringify(users));
-        
-        // Actualizar usuario actual
-        localStorage.setItem(this.CURRENT_USER_KEY, JSON.stringify(updatedUserData));
-        this.currentUserSubject.next(updatedUserData);
-        
-        return true;
-      }
-      
-      return false;
+  // Verificar conexión con la base de datos
+  private async checkDatabaseConnection(): Promise<boolean> {
+    try {
+      const response = await this.http.get('http://localhost:3000/health').toPromise();
+      return true;
     } catch (error) {
-      console.error('Error actualizando usuario:', error);
+      console.log('Base de datos no disponible, usando localStorage');
       return false;
     }
   }
 
-  // Regenerar PIN (para compatibilidad)
-  async regeneratePin(): Promise<boolean> {
-    try {
-      const currentUser = this.getCurrentUser();
-      if (!currentUser) {
-        return false;
-      }
+  // Guardar usuario localmente
+  private saveUserLocally(user: User): void {
+    const users = this.getUsers();
+    users.push(user);
+    localStorage.setItem(this.USERS_KEY, JSON.stringify(users));
+  }
 
-      const newPin = this.generatePin();
-      const pinHash = this.encryptionService.hashUserPassword(newPin);
-      
-      // Actualizar usuario
-      currentUser.pin = pinHash;
-      
-      // Guardar en localStorage
-      localStorage.setItem(this.CURRENT_USER_KEY, JSON.stringify(currentUser));
-      
-      // Actualizar lista de usuarios
-      const users = this.getUsers();
-      const userIndex = users.findIndex(u => u.id === currentUser.id);
-      if (userIndex !== -1) {
-        users[userIndex] = currentUser;
-        localStorage.setItem(this.USERS_KEY, JSON.stringify(users));
-      }
+  // Obtener PIN del usuario (ELIMINADO - ya no se usa)
+  getUserPin(): string {
+    return ''; // PIN ya no es necesario
+  }
 
-      this.currentUserSubject.next(currentUser);
-      console.log('✅ PIN regenerado:', newPin);
-      return true;
-    } catch (error) {
-      console.error('Error regenerando PIN:', error);
-      return false;
-    }
+  // Establecer PIN del usuario (ELIMINADO - ya no se usa)
+  setUserPin(pin: string): void {
+    console.log('✅ PIN ya no es necesario');
   }
 
   // Actualizar perfil de usuario
@@ -271,33 +317,35 @@ export class AuthService {
         return false;
       }
 
-      // Verificar si el email ya existe (si es diferente al actual)
+      // Verificar si el email ya existe (si cambió)
       if (email !== currentUser.email) {
         const users = this.getUsers();
-        const emailExists = users.find(u => u.email === email && u.id !== currentUser.id);
+        const emailExists = users.some(u => u.email === email && u.id !== currentUser.id);
         if (emailExists) {
-          console.log('❌ Email ya existe');
-          return false;
+          throw new Error('Este email ya está registrado');
         }
       }
 
-      // Actualizar datos
-      currentUser.name = name;
-      currentUser.email = email;
+      // Actualizar usuario
+      const updatedUser: User = {
+        ...currentUser,
+        name: name.trim(),
+        email: email.trim().toLowerCase()
+      };
 
-      // Guardar en localStorage
-      localStorage.setItem(this.CURRENT_USER_KEY, JSON.stringify(currentUser));
-
-      // Actualizar lista de usuarios
+      // Actualizar en localStorage
       const users = this.getUsers();
       const userIndex = users.findIndex(u => u.id === currentUser.id);
       if (userIndex !== -1) {
-        users[userIndex] = currentUser;
+        users[userIndex] = updatedUser;
         localStorage.setItem(this.USERS_KEY, JSON.stringify(users));
       }
 
-      this.currentUserSubject.next(currentUser);
-      console.log('✅ Perfil actualizado');
+      // Actualizar usuario actual
+      localStorage.setItem(this.CURRENT_USER_KEY, JSON.stringify(updatedUser));
+      this.currentUserSubject.next(updatedUser);
+
+      console.log('✅ Perfil actualizado exitosamente');
       return true;
     } catch (error) {
       console.error('Error actualizando perfil:', error);
@@ -308,49 +356,42 @@ export class AuthService {
   // Cambiar contraseña
   async changePassword(currentPassword: string, newPassword: string): Promise<boolean> {
     try {
-      const user = this.getCurrentUser();
-      if (!user) {
+      const currentUser = this.getCurrentUser();
+      if (!currentUser) {
         return false;
       }
 
       // Verificar contraseña actual
       const currentPasswordHash = this.encryptionService.hashUserPassword(currentPassword);
-      if (currentPasswordHash !== user.password) {
-        console.log('❌ Contraseña actual incorrecta');
+      if (currentPasswordHash !== currentUser.password) {
         return false;
       }
 
-      // Actualizar contraseña
+      // Generar nueva contraseña hasheada
       const newPasswordHash = this.encryptionService.hashUserPassword(newPassword);
-      user.password = newPasswordHash;
 
-      // Guardar en localStorage
-      localStorage.setItem(this.CURRENT_USER_KEY, JSON.stringify(user));
+      // Actualizar usuario
+      const updatedUser: User = {
+        ...currentUser,
+        password: newPasswordHash
+      };
 
-      // Actualizar lista de usuarios
+      // Actualizar en localStorage
       const users = this.getUsers();
-      const userIndex = users.findIndex(u => u.id === user.id);
+      const userIndex = users.findIndex(u => u.id === currentUser.id);
       if (userIndex !== -1) {
-        users[userIndex] = user;
+        users[userIndex] = updatedUser;
         localStorage.setItem(this.USERS_KEY, JSON.stringify(users));
       }
 
-      this.currentUserSubject.next(user);
-      console.log('✅ Contraseña cambiada');
+      // Actualizar usuario actual
+      localStorage.setItem(this.CURRENT_USER_KEY, JSON.stringify(updatedUser));
+      this.currentUserSubject.next(updatedUser);
+
+      console.log('✅ Contraseña cambiada exitosamente');
       return true;
     } catch (error) {
       console.error('Error cambiando contraseña:', error);
-      return false;
-    }
-  }
-
-  // Verificar conexión con la base de datos
-  private async checkDatabaseConnection(): Promise<boolean> {
-    try {
-      const response = await this.http.get('http://localhost:3000/health').toPromise();
-      return true;
-    } catch (error) {
-      console.log('Base de datos no disponible, usando localStorage');
       return false;
     }
   }

@@ -6,10 +6,10 @@ export const routes: Routes = [
     redirectTo: '/login',
     pathMatch: 'full',
   },
-  {
-    path: 'email-config',
-    loadComponent: () => import('./pages/email-config/email-config.page').then((m) => m.EmailConfigPage),
-  },
+  // {
+  //   path: 'email-config',
+  //   loadComponent: () => import('./pages/email-config/email-config.page').then((m) => m.EmailConfigPage),
+  // },
   {
     path: 'login',
     loadComponent: () => import('./pages/login/login.page').then((m) => m.LoginPage),

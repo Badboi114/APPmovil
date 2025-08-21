@@ -101,3 +101,141 @@ ion-card-title {
   margin-top: 2px;
   font-size: 1.1rem;
 }
+
+.divider-section {
+  margin: 20px 0;
+  text-align: center;
+  position: relative;
+}
+
+.divider-text {
+  margin: 0;
+  padding: 0 15px;
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--ion-color-medium);
+  font-size: 0.9rem;
+  position: relative;
+  z-index: 1;
+}
+
+.divider-section::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--ion-color-light-shade);
+  z-index: 0;
+}
+
+.google-button {
+  margin: 10px 0 20px 0;
+  --border-radius: 12px;
+  height: 48px;
+  font-weight: 600;
+  text-transform: none;
+  --border-color: var(--ion-color-danger);
+  --color: var(--ion-color-danger);
+}
+
+.google-button:hover {
+  --background: rgba(var(--ion-color-danger-rgb), 0.04);
+}
+
+.google-button ion-icon {
+  font-size: 1.2rem;
+}
+
+// Estilos para el modal del PIN
+:host {
+  .pin-alert {
+    --width: 90%;
+    --max-width: 500px;
+    
+    .alert-wrapper {
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+    
+    .alert-head {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      text-align: center;
+      padding: 20px;
+      
+      h2 {
+        font-size: 1.5rem;
+        margin: 0;
+        font-weight: bold;
+      }
+    }
+    
+    .alert-message {
+      padding: 0 !important;
+      
+      div {
+        padding: 20px;
+      }
+    }
+    
+    .pin-button {
+      --background: #3880ff;
+      --color: white;
+      font-weight: bold;
+      font-size: 1.1rem;
+      height: 50px;
+      border-radius: 10px;
+      margin: 10px;
+    }
+  }
+}
+
+// Estilos globales para el modal del PIN
+.pin-alert {
+  .alert-wrapper {
+    border-radius: 20px !important;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+  }
+  
+  .alert-head {
+    background: linear-gradient(135deg, #3880ff 0%, #5260ff 100%) !important;
+    color: white !important;
+    padding: 25px 20px !important;
+    text-align: center;
+    
+    .alert-title {
+      color: white !important;
+      font-size: 1.4rem !important;
+      font-weight: 700 !important;
+      margin: 0 !important;
+    }
+  }
+  
+  .alert-message {
+    padding: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  
+  .alert-button-group {
+    padding: 0 20px 20px 20px;
+    
+    .alert-button {
+      background: #3880ff !important;
+      color: white !important;
+      border-radius: 12px !important;
+      font-weight: 600 !important;
+      font-size: 1rem !important;
+      height: 48px !important;
+      margin: 0 !important;
+      
+      &:hover {
+        background: #2969ff !important;
+      }
+    }
+  }
+}

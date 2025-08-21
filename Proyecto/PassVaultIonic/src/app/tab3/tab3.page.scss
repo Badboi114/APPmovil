@@ -31,11 +31,79 @@ ion-card-title {
 .user-card ion-card-title,
 .user-card ion-label h3,
 .user-card ion-label p {
-  color: white;
+  color: white !important;
 }
 
 .user-card ion-icon {
-  color: white;
+  color: white !important;
+}
+
+// Asegurar que los elementos dentro de la lista también tengan texto blanco
+.user-card ion-list {
+  background: transparent !important;
+}
+
+.user-card ion-item {
+  --background: transparent !important;
+  --color: white !important;
+  --border-color: rgba(255, 255, 255, 0.2);
+  --inner-border-width: 0 0 1px 0;
+}
+
+.user-card ion-item ion-label {
+  color: white !important;
+}
+
+.user-card ion-item ion-label h3,
+.user-card ion-item ion-label p {
+  color: white !important;
+}
+
+// Botones dentro de la user-card
+.user-card ion-button {
+  --color: white;
+}
+
+// Texto dentro de divs en la user-card
+.user-card div {
+  color: white !important;
+}
+
+.user-card h3,
+.user-card p {
+  color: white !important;
+}
+
+.profile-actions {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.edit-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.edit-buttons ion-button:first-child {
+  margin-bottom: 8px;
+}
+
+.user-card ion-input {
+  --background: rgba(255, 255, 255, 0.1);
+  --color: white;
+  --placeholder-color: rgba(255, 255, 255, 0.7);
+  --border-radius: 8px;
+  --padding-start: 12px;
+  --padding-end: 12px;
+  margin-top: 8px;
+}
+
+.user-card ion-input::part(native) {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .security-card ion-card-title {
@@ -72,4 +140,34 @@ ion-button {
 
 ion-icon[slot="start"] {
   margin-right: 8px;
+}
+
+// Estilos para edición individual de campos
+.edit-actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.edit-actions ion-button {
+  --border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  margin: 0;
+}
+
+// Botón de editar individual
+ion-item ion-button[slot="end"] {
+  --border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  margin: 0;
+}
+
+// Estilos para inputs en modo edición
+ion-input[fill="outline"] {
+  --border-radius: 8px;
+  --border-color: rgba(255, 255, 255, 0.3);
+  --color: white;
+  --placeholder-color: rgba(255, 255, 255, 0.7);
 }

@@ -19,15 +19,19 @@ export class AppComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    console.log('AppComponent iniciado');
+    
     // Verificar estado inicial
     this.checkAuthState();
 
     // Escuchar cambios de autenticación
-    this.authService.isUserLoggedIn$.subscribe(() => {
+    this.authService.isUserLoggedIn$.subscribe((loggedIn) => {
+      console.log('User logged in changed:', loggedIn);
       this.checkAuthState();
     });
 
-    this.authService.isAuthenticated$.subscribe(() => {
+    this.authService.isAuthenticated$.subscribe((authenticated) => {
+      console.log('User authenticated changed:', authenticated);
       this.checkAuthState();
     });
   }
@@ -37,25 +41,42 @@ export class AppComponent implements OnInit {
     const isUserLoggedIn = this.authService.isUserLoggedIn();
     const isAuthenticated = this.authService.isLoggedIn();
 
+    console.log('Auth State Check:', {
+      currentUrl,
+      isUserLoggedIn,
+      isAuthenticated,
+      showLockScreen: this.showLockScreen
+    });
+
+    // Si no hay usuario logueado, ir a login
     if (!isUserLoggedIn) {
-      // No hay usuario logueado
       this.showLockScreen = false;
       if (currentUrl !== '/login' && currentUrl !== '/register') {
+        console.log('Redirigiendo a login');
         this.router.navigate(['/login']);
       }
-    } else if (isUserLoggedIn && !isAuthenticated) {
-      // Usuario logueado pero necesita PIN
+      return;
+    }
+
+    // Si hay usuario pero no está autenticado (necesita PIN)
+    if (isUserLoggedIn && !isAuthenticated) {
+      console.log('Mostrando lock screen');
       this.showLockScreen = true;
-    } else {
-      // Usuario autenticado completamente
+      return;
+    }
+
+    // Si está completamente autenticado
+    if (isUserLoggedIn && isAuthenticated) {
       this.showLockScreen = false;
-      if (currentUrl === '/login' || currentUrl === '/register' || currentUrl === '/') {
+      if (currentUrl === '/login' || currentUrl === '/register' || currentUrl === '/' || currentUrl === '') {
+        console.log('Redirigiendo a tabs');
         this.router.navigate(['/tabs']);
       }
     }
   }
 
   onUnlocked() {
+    console.log('PIN desbloqueado');
     this.showLockScreen = false;
     this.router.navigate(['/tabs']);
   }

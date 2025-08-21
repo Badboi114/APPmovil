@@ -1,60 +1,23 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { 
-  IonContent, 
-  IonHeader, 
-  IonTitle, 
-  IonToolbar, 
-  IonCard, 
-  IonCardHeader, 
-  IonCardTitle, 
-  IonCardContent, 
-  IonItem, 
-  IonLabel, 
-  IonInput, 
-  IonButton,
-  IonText,
-  IonIcon,
-  IonList,
-  IonSpinner,
-  ToastController
-} from '@ionic/angular/standalone';
+import { ToastController } from '@ionic/angular';
 import { EmailService } from '../../services/email.service';
 
 @Component({
   selector: 'app-email-config',
   templateUrl: './email-config.page.html',
   styleUrls: ['./email-config.page.scss'],
-  imports: [
-    IonContent, 
-    IonHeader, 
-    IonTitle, 
-    IonToolbar, 
-    IonCard, 
-    IonCardHeader, 
-    IonCardTitle, 
-    IonCardContent, 
-    IonItem, 
-    IonLabel, 
-    IonInput, 
-    IonButton,
-    IonText,
-    IonIcon,
-    IonList,
-    IonSpinner,
-    CommonModule, 
-    FormsModule
-  ]
 })
 export class EmailConfigPage implements OnInit {
+
   serviceId: string = '';
   templateId: string = '';
   publicKey: string = '';
-  testEmail: string = '';
-  isTesting: boolean = false;
+  testEmail: string = 'wijanlu@gmail.com'; // Email por defecto
+  
   configLoaded: boolean = false;
+  testingConfiguration: boolean = false;
+  emailLogs: any[] = [];
 
   constructor(
     private emailService: EmailService,
@@ -63,17 +26,21 @@ export class EmailConfigPage implements OnInit {
   ) { }
 
   ngOnInit() {
-    this.loadExistingConfiguration();
+    this.loadCurrentConfig();
+    this.loadEmailLogs();
   }
 
-  loadExistingConfiguration() {
-    const config = this.emailService.getCurrentConfig();
-    if (config.isConfigured) {
-      this.serviceId = config.serviceId;
-      this.templateId = config.templateId;
-      this.publicKey = config.publicKey;
-      this.configLoaded = true;
+  loadCurrentConfig() {
+    this.configLoaded = this.emailService.isEmailConfigured();
+    if (this.configLoaded) {
+      this.showToast('✅ Sistema de email ya configurado y funcional', 'success');
+    } else {
+      this.showToast('📧 Configure el sistema de email para mayor funcionalidad', 'medium');
     }
+  }
+
+  loadEmailLogs() {
+    this.emailLogs = this.emailService.getEmailLogs().slice(-5); // Últimos 5
   }
 
   async saveConfiguration() {
@@ -83,10 +50,16 @@ export class EmailConfigPage implements OnInit {
     }
 
     try {
-      const success = this.emailService.configureEmailJS(this.serviceId, this.templateId, this.publicKey);
+      const success = await this.emailService.configureEmail(
+        this.serviceId, 
+        this.templateId, 
+        this.publicKey
+      );
       
       if (success) {
         await this.showToast('✅ Configuración guardada exitosamente', 'success');
+        this.configLoaded = true;
+        this.loadEmailLogs();
       } else {
         await this.showToast('❌ Error guardando configuración', 'danger');
       }
@@ -97,49 +70,49 @@ export class EmailConfigPage implements OnInit {
 
   async testConfiguration() {
     if (!this.testEmail) {
-      await this.showToast('Por favor, ingresa un email para prueba', 'warning');
+      await this.showToast('Por favor, ingresa un email de prueba', 'warning');
       return;
     }
 
-    if (!this.serviceId || !this.templateId || !this.publicKey) {
-      await this.showToast('Por favor, configura EmailJS primero', 'warning');
-      return;
-    }
-
-    this.isTesting = true;
-    
     try {
-      // Guardar configuración primero
-      this.emailService.configureEmailJS(this.serviceId, this.templateId, this.publicKey);
+      this.testingConfiguration = true;
+      await this.showToast('📧 Enviando email de prueba...', 'medium');
       
-      // Probar envío
-      const success = await this.emailService.testConfiguration(this.testEmail);
+      const testPin = Math.floor(1000 + Math.random() * 9000).toString();
+      const success = await this.emailService.sendPin(
+        this.testEmail, 
+        testPin, 
+        'Usuario de Prueba'
+      );
       
       if (success) {
-        await this.showToast('✅ Email de prueba enviado. Revisa tu bandeja de entrada.', 'success');
+        await this.showToast('✅ Email de prueba enviado correctamente', 'success');
+        this.loadEmailLogs(); // Actualizar logs
       } else {
         await this.showToast('❌ Error enviando email de prueba', 'danger');
       }
     } catch (error) {
       await this.showToast('❌ Error en la prueba', 'danger');
     } finally {
-      this.isTesting = false;
+      this.testingConfiguration = false;
     }
   }
 
   useQuickSetup() {
-    // Configuración con credenciales reales que funcionan (puedes cambiar por las tuyas)
-    this.serviceId = 'service_4sxvl8j';
-    this.templateId = 'template_passvault_pin';
-    this.publicKey = 'KhYjYE_ZVL5q8wT2k';
+    this.serviceId = 'service_passvault';
+    this.templateId = 'template_pin_email';
+    this.publicKey = 'pk_functional_2024';
+    this.saveConfiguration();
   }
 
   async resetConfiguration() {
     this.serviceId = '';
     this.templateId = '';
     this.publicKey = '';
-    localStorage.removeItem('emailjs_config');
-    await this.showToast('Configuración reiniciada', 'success');
+    this.configLoaded = false;
+    this.emailService.clearEmailLogs();
+    this.emailLogs = [];
+    await this.showToast('🔄 Configuración reiniciada', 'medium');
   }
 
   goToLogin() {
@@ -151,7 +124,7 @@ export class EmailConfigPage implements OnInit {
       message: message,
       duration: 3000,
       color: color,
-      position: 'top'
+      position: 'bottom'
     });
     toast.present();
   }

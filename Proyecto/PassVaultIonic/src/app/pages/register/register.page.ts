@@ -18,7 +18,8 @@ import {
   IonText,
   IonSpinner,
   IonIcon,
-  ToastController
+  ToastController,
+  AlertController
 } from '@ionic/angular/standalone';
 import { AuthService } from '../../services/auth.service';
 
@@ -56,7 +57,8 @@ export class RegisterPage implements OnInit {
   constructor(
     private authService: AuthService,
     private router: Router,
-    private toastController: ToastController
+    private toastController: ToastController,
+    private alertController: AlertController
   ) { }
 
   ngOnInit() {
@@ -86,11 +88,11 @@ export class RegisterPage implements OnInit {
     this.isLoading = true;
     
     try {
-      const success = await this.authService.register(this.name, this.email, this.password);
+      const result = await this.authService.register(this.name, this.email, this.password);
       
-      if (success) {
-        await this.showToast('Registro exitoso. Se ha enviado un PIN a tu correo.', 'success');
-        this.router.navigate(['/login']);
+      if (result.success && result.pin) {
+        // Mostrar el PIN generado al usuario
+        await this.showPinGenerated(result.pin);
       } else {
         await this.showToast('Error en el registro. El email ya está en uso.', 'danger');
       }
@@ -122,5 +124,27 @@ export class RegisterPage implements OnInit {
       position: 'top'
     });
     toast.present();
+  }
+
+  private async showPinGenerated(pin: string) {
+    const alert = await this.alertController.create({
+      header: '🎉 ¡Registro Exitoso!',
+      message: `Tu cuenta ha sido creada exitosamente.
+
+🔐 Tu PIN de Seguridad es: ${pin}
+
+⚠️ IMPORTANTE: Guarda este PIN en un lugar seguro. Lo necesitarás para acceder a la aplicación.`,
+      buttons: [
+        {
+          text: 'Entendido - Ir a Iniciar Sesión',
+          handler: () => {
+            this.router.navigate(['/login']);
+          }
+        }
+      ],
+      backdropDismiss: false
+    });
+
+    await alert.present();
   }
 }

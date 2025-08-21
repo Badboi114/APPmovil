@@ -8,32 +8,103 @@
   <div class="settings-container">
     
     <!-- Información del Usuario -->
-    <ion-card class="user-card" *ngIf="currentUser">
+    <ion-card class="user-card">
       <ion-card-header>
         <ion-card-title>
           <ion-icon name="person-outline"></ion-icon>
-          Perfil de Usuario
+          Perfil de Usuario (Debug: {{ currentUser ? 'Con datos' : 'Sin datos' }})
         </ion-card-title>
       </ion-card-header>
       
       <ion-card-content>
-        <ion-list>
+        <div *ngIf="!currentUser" style="text-align: center; padding: 20px; color: white;">
+          <p>No hay datos de usuario disponibles</p>
+          <ion-button fill="outline" color="light" (click)="loadCurrentUser()">
+            Recargar Datos
+          </ion-button>
+        </div>
+        
+        <ion-list *ngIf="currentUser">
+          <!-- Campo Nombre -->
           <ion-item>
             <ion-icon name="person-outline" slot="start"></ion-icon>
             <ion-label>
               <h3>Nombre</h3>
-              <p>{{ currentUser.name }}</p>
+              <p *ngIf="!isEditingName">{{ currentUser.name }}</p>
+              <ion-input 
+                *ngIf="isEditingName" 
+                [(ngModel)]="editedUser.name" 
+                placeholder="Ingresa tu nombre"
+                fill="outline">
+              </ion-input>
             </ion-label>
+            <ion-button 
+              *ngIf="!isEditingName" 
+              slot="end" 
+              fill="clear" 
+              size="small"
+              (click)="startEditingName()">
+              <ion-icon name="create-outline"></ion-icon>
+            </ion-button>
+            <div *ngIf="isEditingName" slot="end" class="edit-actions">
+              <ion-button 
+                fill="clear" 
+                size="small" 
+                color="success"
+                (click)="saveNameEdit()">
+                <ion-icon name="checkmark-outline"></ion-icon>
+              </ion-button>
+              <ion-button 
+                fill="clear" 
+                size="small" 
+                color="medium"
+                (click)="cancelNameEdit()">
+                <ion-icon name="close-outline"></ion-icon>
+              </ion-button>
+            </div>
           </ion-item>
           
+          <!-- Campo Email -->
           <ion-item>
             <ion-icon name="mail-outline" slot="start"></ion-icon>
             <ion-label>
               <h3>Correo Electrónico</h3>
-              <p>{{ currentUser.email }}</p>
+              <p *ngIf="!isEditingEmail">{{ currentUser.email }}</p>
+              <ion-input 
+                *ngIf="isEditingEmail" 
+                [(ngModel)]="editedUser.email" 
+                type="email"
+                placeholder="Ingresa tu email"
+                fill="outline">
+              </ion-input>
             </ion-label>
+            <ion-button 
+              *ngIf="!isEditingEmail" 
+              slot="end" 
+              fill="clear" 
+              size="small"
+              (click)="startEditingEmail()">
+              <ion-icon name="create-outline"></ion-icon>
+            </ion-button>
+            <div *ngIf="isEditingEmail" slot="end" class="edit-actions">
+              <ion-button 
+                fill="clear" 
+                size="small" 
+                color="success"
+                (click)="saveEmailEdit()">
+                <ion-icon name="checkmark-outline"></ion-icon>
+              </ion-button>
+              <ion-button 
+                fill="clear" 
+                size="small" 
+                color="medium"
+                (click)="cancelEmailEdit()">
+                <ion-icon name="close-outline"></ion-icon>
+              </ion-button>
+            </div>
           </ion-item>
           
+          <!-- Campo Fecha de Registro (No editable) -->
           <ion-item>
             <ion-icon name="calendar-outline" slot="start"></ion-icon>
             <ion-label>
@@ -41,7 +112,35 @@
               <p>{{ currentUser.createdAt | date:'dd/MM/yyyy' }}</p>
             </ion-label>
           </ion-item>
+
+          <!-- Campo PIN (Solo mostrar que existe) -->
+          <ion-item>
+            <ion-icon name="key-outline" slot="start"></ion-icon>
+            <ion-label>
+              <h3>PIN de Seguridad</h3>
+              <p>••••</p>
+            </ion-label>
+            <ion-button 
+              slot="end" 
+              fill="clear" 
+              size="small"
+              (click)="regeneratePin()">
+              <ion-icon name="refresh-outline"></ion-icon>
+            </ion-button>
+          </ion-item>
         </ion-list>
+        
+        <!-- Cambiar contraseña -->
+        <div class="password-section">
+          <ion-button 
+            expand="block" 
+            fill="outline" 
+            color="warning"
+            (click)="changePassword()">
+            <ion-icon name="key-outline" slot="start"></ion-icon>
+            Cambiar Contraseña
+          </ion-button>
+        </div>
       </ion-card-content>
     </ion-card>
 
