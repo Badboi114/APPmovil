@@ -10,7 +10,8 @@
   align-items: center;
   min-height: 100vh;
   padding: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #4C63D2 0%, #7B3F98 100%);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .lock-card {
@@ -28,8 +29,9 @@
 
 ion-card-title {
   font-size: 2rem;
-  font-weight: bold;
-  color: var(--ion-color-primary);
+  font-weight: 700;
+  color: #4C63D2;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .pin-display {
@@ -44,13 +46,13 @@ ion-card-title {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  border: 2px solid var(--ion-color-primary);
+  border: 2px solid #4C63D2;
   background: transparent;
   transition: all 0.3s ease;
 }
 
 .pin-dot.filled {
-  background: var(--ion-color-primary);
+  background: #4C63D2;
   transform: scale(1.1);
 }
 
@@ -63,11 +65,12 @@ ion-card-title {
   height: 80px;
   border-radius: 50%;
   font-size: 24px;
-  font-weight: bold;
-  color: var(--ion-color-primary);
+  font-weight: 700;
+  color: #4C63D2;
   --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   margin: 5px auto;
   display: block;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .keypad-button:hover {
@@ -76,7 +79,8 @@ ion-card-title {
 }
 
 .action-button {
-  color: var(--ion-color-medium) !important;
+  color: #6B7280 !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 .action-buttons {
@@ -89,5 +93,7 @@ ion-card-title {
 .action-buttons ion-button {
   --border-radius: 12px;
   height: 45px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 600;
   font-weight: 600;
 }

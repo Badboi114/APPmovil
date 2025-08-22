@@ -9,14 +9,31 @@
 @import "@ionic/angular/css/text-transformation.css";
 @import "@ionic/angular/css/flex-utils.css";
 
+/* Importar Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* Variables globales */
+:root {
+  --passvault-gradient: linear-gradient(135deg, #4C63D2 0%, #7B3F98 100%);
+  --passvault-primary: #4C63D2;
+  --passvault-secondary: #7B3F98;
+  --passvault-text: #FFFFFF;
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+/* Aplicar fuente global */
+* {
+  font-family: var(--font-family);
+}
+
 /* PassVault Custom Styles */
 ion-content {
-  --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --background: var(--passvault-gradient);
 }
 
 ion-toolbar {
-  --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --color: white;
+  --background: var(--passvault-gradient);
+  --color: var(--passvault-text);
 }
 
 /* Lock Screen Styles */
@@ -26,7 +43,8 @@ ion-toolbar {
   justify-content: center;
   min-height: 100vh;
   text-align: center;
-  color: white;
+  color: var(--passvault-text);
+  font-family: var(--font-family);
 }
 
 .lock-container {
@@ -41,7 +59,7 @@ ion-toolbar {
 .lock-icon {
   font-size: 4rem;
   margin-bottom: 1rem;
-  color: white;
+  color: var(--passvault-text);
 }
 
 .pin-dots {
@@ -61,8 +79,8 @@ ion-toolbar {
 }
 
 .pin-dot.filled {
-  background: white;
-  border-color: white;
+  background: var(--passvault-text);
+  border-color: var(--passvault-text);
   transform: scale(1.1);
 }
 
@@ -79,9 +97,11 @@ ion-toolbar {
 .num-btn {
   --border-radius: 50%;
   --background: rgba(255, 255, 255, 0.1);
-  --color: white;
+  --color: var(--passvault-text);
   width: 60px;
   height: 60px;
+  font-family: var(--font-family);
+  font-weight: 600;
 }
 
 .empty-btn {
@@ -91,8 +111,10 @@ ion-toolbar {
 
 .unlock-btn {
   --background: rgba(255, 255, 255, 0.2);
-  --color: white;
+  --color: var(--passvault-text);
   margin-top: 1rem;
+  font-family: var(--font-family);
+  font-weight: 600;
 }
 
 /* Generator Styles */
@@ -106,9 +128,9 @@ ion-toolbar {
 }
 
 .password-display {
-  font-family: monospace;
+  font-family: 'Inter', monospace;
   font-size: 1rem;
-  color: white;
+  color: var(--passvault-text);
   word-break: break-all;
   min-height: 2rem;
   display: flex;
@@ -117,8 +139,10 @@ ion-toolbar {
 
 .generate-btn {
   --background: rgba(255, 255, 255, 0.2);
-  --color: white;
+  --color: var(--passvault-text);
   margin-top: 1rem;
+  font-family: var(--font-family);
+  font-weight: 600;
 }
 
 /* Vault Styles */
@@ -130,6 +154,7 @@ ion-toolbar {
   text-align: center;
   color: rgba(255, 255, 255, 0.8);
   padding: 3rem 1rem;
+  font-family: var(--font-family);
 }
 
 .password-item {
@@ -145,23 +170,55 @@ ion-card {
 }
 
 ion-card-title, ion-card-subtitle {
-  color: white;
+  color: var(--passvault-text);
+  font-family: var(--font-family);
+}
+
+ion-card-title {
+  font-weight: 700;
+}
+
+ion-card-subtitle {
+  font-weight: 500;
 }
 
 ion-item {
   --background: transparent;
-  --color: white;
+  --color: var(--passvault-text);
+  font-family: var(--font-family);
+}
+
+ion-label {
+  font-family: var(--font-family);
 }
 
 ion-checkbox {
-  --color-checked: white;
-  --border-color-checked: white;
+  --color-checked: var(--passvault-text);
+  --border-color-checked: var(--passvault-text);
 }
 
 ion-range {
   --bar-background: rgba(255, 255, 255, 0.3);
-  --bar-background-active: white;
-  --knob-background: white;
+  --bar-background-active: var(--passvault-text);
+  --knob-background: var(--passvault-text);
+}
+
+/* Títulos y textos principales */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-family);
+  font-weight: 700;
+  color: var(--passvault-text);
+}
+
+p {
+  font-family: var(--font-family);
+  color: var(--passvault-text);
+}
+
+/* Botones generales */
+ion-button {
+  font-family: var(--font-family);
+  font-weight: 600;
 }
 
 /* Estilos para el modal del PIN - Global */
@@ -176,16 +233,17 @@ ion-range {
   }
   
   .alert-head {
-    background: linear-gradient(135deg, #3880ff 0%, #5260ff 100%) !important;
-    color: white !important;
+    background: var(--passvault-gradient) !important;
+    color: var(--passvault-text) !important;
     padding: 25px 20px !important;
     text-align: center;
     
     .alert-title {
-      color: white !important;
+      color: var(--passvault-text) !important;
       font-size: 1.4rem !important;
       font-weight: 700 !important;
       margin: 0 !important;
+      font-family: var(--font-family) !important;
     }
   }
   
@@ -197,6 +255,7 @@ ion-range {
     h1 {
       text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
       animation: pinPulse 2s ease-in-out infinite;
+      font-family: var(--font-family) !important;
     }
   }
   
@@ -204,21 +263,22 @@ ion-range {
     padding: 0 20px 20px 20px;
     
     .alert-button {
-      background: linear-gradient(135deg, #3880ff 0%, #5260ff 100%) !important;
-      color: white !important;
+      background: var(--passvault-gradient) !important;
+      color: var(--passvault-text) !important;
       border-radius: 12px !important;
       font-weight: 600 !important;
       font-size: 1rem !important;
       height: 48px !important;
       margin: 0 !important;
       border: none !important;
-      box-shadow: 0 4px 15px rgba(56, 128, 255, 0.3) !important;
+      box-shadow: 0 4px 15px rgba(76, 99, 210, 0.3) !important;
       transition: all 0.3s ease !important;
+      font-family: var(--font-family) !important;
       
       &:hover {
-        background: linear-gradient(135deg, #2969ff 0%, #4148ff 100%) !important;
+        background: linear-gradient(135deg, #3A52B8 0%, #643084 100%) !important;
         transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(56, 128, 255, 0.4) !important;
+        box-shadow: 0 6px 20px rgba(76, 99, 210, 0.4) !important;
       }
     }
   }
@@ -237,21 +297,21 @@ ion-range {
 /* Estilos mejorados para el PIN display */
 .pin-display {
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border: 3px solid #3880ff;
+  border: 3px solid var(--passvault-primary);
   border-radius: 15px;
   padding: 25px;
   margin: 20px 0;
   box-shadow: 
-    0 4px 15px rgba(56, 128, 255, 0.2),
+    0 4px 15px rgba(76, 99, 210, 0.2),
     inset 0 1px 3px rgba(255, 255, 255, 0.8);
 }
 
 .pin-number {
-  color: #3880ff !important;
+  color: var(--passvault-primary) !important;
   font-size: 3.5rem !important;
   font-weight: 900 !important;
   letter-spacing: 20px !important;
-  font-family: 'Courier New', 'Monaco', monospace !important;
+  font-family: 'Inter', 'Courier New', 'Monaco', monospace !important;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
   animation: pinGlow 3s ease-in-out infinite alternate;
 }
@@ -261,6 +321,6 @@ ion-range {
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
   }
   to {
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1), 0 0 10px rgba(56, 128, 255, 0.3);
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1), 0 0 10px rgba(76, 99, 210, 0.3);
   }
 }

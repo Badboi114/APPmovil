@@ -13,7 +13,7 @@ import {
   IonRow,
   IonCol
 } from '@ionic/angular/standalone';
-import { AuthService, User } from '../../services/auth.service';
+import { AuthService, AuthUser } from '../../services/auth.service';
 
 @Component({
   selector: 'app-lock-screen',
@@ -37,7 +37,7 @@ export class LockScreenComponent implements OnInit {
   @Output() unlocked = new EventEmitter<void>();
   
   pin: string = '';
-  currentUser: User | null = null;
+  currentUser: AuthUser | null = null;
   isRegeneratingPin: boolean = false;
 
   constructor(

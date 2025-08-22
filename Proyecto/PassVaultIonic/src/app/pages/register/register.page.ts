@@ -21,7 +21,7 @@ import {
   ToastController,
   AlertController
 } from '@ionic/angular/standalone';
-import { AuthService } from '../../services/auth.service';
+import { AuthService, RegisterResponse } from '../../services/auth.service';
 
 @Component({
   selector: 'app-register',
@@ -88,7 +88,15 @@ export class RegisterPage implements OnInit {
     this.isLoading = true;
     
     try {
-      const result = await this.authService.register(this.name, this.email, this.password);
+      // Generar PIN aleatorio de 6 dígitos
+      const generatedPin = Math.floor(100000 + Math.random() * 900000).toString();
+      
+      const result = await this.authService.register({
+        name: this.name,
+        email: this.email,
+        password: this.password,
+        pin: generatedPin
+      });
       
       if (result.success && result.pin) {
         // Mostrar el PIN generado al usuario

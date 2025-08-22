@@ -92,10 +92,6 @@ export class LoginPage implements OnInit {
     this.router.navigate(['/register']);
   }
 
-  goToEmailConfig() {
-    this.router.navigate(['/email-config']);
-  }
-
   private async showToast(message: string, color: string) {
     const toast = await this.toastController.create({
       message: message,

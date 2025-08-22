@@ -36,7 +36,7 @@ import {
   logInOutline,
   shieldCheckmarkOutline
 } from 'ionicons/icons';
-import { AuthService, User } from '../services/auth.service';
+import { AuthService, AuthUser } from '../services/auth.service';
 
 @Component({
   selector: 'app-tab3',
@@ -63,7 +63,7 @@ import { AuthService, User } from '../services/auth.service';
   ]
 })
 export class Tab3Page implements OnInit {
-  currentUser: User | null = null;
+  currentUser: AuthUser | null = null;
   isEditingName = false;
   isEditingEmail = false;
   editedUser: { name: string; email: string } = { name: '', email: '' };
@@ -136,12 +136,11 @@ export class Tab3Page implements OnInit {
       // Si no hay usuario, crear datos de prueba para testing
       console.log('Tab3 - Creando usuario de prueba para testing');
       this.currentUser = {
-        id: 'test-id',
+        id: 1,
         name: 'Usuario de Prueba',
         email: 'test@example.com',
-        password: 'test-password',
-        pin: '1234',
-        createdAt: new Date()
+        pin: '123456',
+        createdAt: new Date().toISOString()
       };
       this.editedUser = { 
         name: this.currentUser.name, 
@@ -173,23 +172,53 @@ export class Tab3Page implements OnInit {
     await alert.present();
   }
 
-  async regeneratePin() {
+  // Método para personalizar PIN
+  async customizePin() {
     const alert = await this.alertController.create({
-      header: 'Regenerar PIN',
-      message: '¿Quieres generar un nuevo PIN? Se enviará a tu correo electrónico.',
+      header: 'Personalizar PIN',
+      message: 'Ingresa tu nuevo PIN de 4 dígitos:',
+      inputs: [
+        {
+          name: 'newPin',
+          type: 'number',
+          placeholder: 'Ej: 1234',
+          attributes: {
+            maxlength: 4,
+            minlength: 4
+          }
+        }
+      ],
       buttons: [
         {
           text: 'Cancelar',
           role: 'cancel'
         },
         {
-          text: 'Regenerar',
-          handler: async () => {
-            const success = await this.authService.regeneratePin();
-            if (success) {
-              this.showToast('Nuevo PIN enviado a tu correo', 'success');
-            } else {
-              this.showToast('Error enviando nuevo PIN', 'danger');
+          text: 'Guardar PIN',
+          handler: async (data) => {
+            const newPin = data.newPin;
+            
+            // Validar que el PIN tenga exactamente 4 dígitos
+            if (!newPin || newPin.length !== 4 || !/^\d{4}$/.test(newPin)) {
+              this.showToast('El PIN debe tener exactamente 4 dígitos', 'warning');
+              return false; // Mantener el alert abierto
+            }
+
+            try {
+              // Cambiar el PIN usando el servicio de autenticación
+              const success = await this.authService.changePin(newPin);
+              if (success) {
+                this.showToast('PIN personalizado guardado exitosamente', 'success');
+                this.loadCurrentUser(); // Recargar datos del usuario
+                return true;
+              } else {
+                this.showToast('Error al guardar el nuevo PIN', 'danger');
+                return false;
+              }
+            } catch (error) {
+              console.error('Error al personalizar PIN:', error);
+              this.showToast('Error al personalizar PIN', 'danger');
+              return false;
             }
           }
         }
@@ -219,10 +248,9 @@ export class Tab3Page implements OnInit {
     }
 
     try {
-      const success = await this.authService.updateUserProfile(
-        this.editedUser.name,
-        this.currentUser!.email
-      );
+      const success = await this.authService.updateUserProfile({
+        name: this.editedUser.name
+      });
 
       if (success) {
         this.isEditingName = false;
@@ -262,10 +290,9 @@ export class Tab3Page implements OnInit {
     }
 
     try {
-      const success = await this.authService.updateUserProfile(
-        this.currentUser!.name,
-        this.editedUser.email
-      );
+      const success = await this.authService.updateUserProfile({
+        email: this.editedUser.email
+      });
 
       if (success) {
         this.isEditingEmail = false;

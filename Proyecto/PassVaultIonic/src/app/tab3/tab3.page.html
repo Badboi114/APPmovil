@@ -124,8 +124,8 @@
               slot="end" 
               fill="clear" 
               size="small"
-              (click)="regeneratePin()">
-              <ion-icon name="refresh-outline"></ion-icon>
+              (click)="customizePin()">
+              <ion-icon name="keypad-outline"></ion-icon>
             </ion-button>
           </ion-item>
         </ion-list>
@@ -158,14 +158,14 @@
           expand="block" 
           color="secondary" 
           fill="outline"
-          (click)="regeneratePin()">
-          <ion-icon name="refresh-outline" slot="start"></ion-icon>
-          Regenerar PIN
+          (click)="customizePin()">
+          <ion-icon name="keypad-outline" slot="start"></ion-icon>
+          Personalizar PIN
         </ion-button>
         
         <ion-text color="medium">
           <p class="security-note">
-            Al regenerar tu PIN, se enviará uno nuevo a tu correo electrónico registrado.
+            Personaliza tu PIN de seguridad de 4 dígitos para acceder a la aplicación.
           </p>
         </ion-text>
       </ion-card-content>
@@ -202,10 +202,10 @@
       </ion-card-header>
       
       <ion-card-content>
-        <ion-text color="medium">
+        <ion-text color="dark">
           <p>
             PassVault es tu compañero seguro para generar y administrar contraseñas.
-            Mantén tus credenciales seguras con autenticación por PIN enviado a tu correo.
+            Mantén tus credenciales seguras con autenticación por PIN y encriptado AES-256-CBC con HMAC-SHA256.
           </p>
           <p><strong>Versión:</strong> 1.0.0</p>
         </ion-text>

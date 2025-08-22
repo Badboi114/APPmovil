@@ -1,9 +1,4 @@
 <ion-app>
-  <!-- Debug info -->
-  <div style="position: fixed; top: 10px; right: 10px; z-index: 9999; background: rgba(255,0,0,0.8); color: white; padding: 5px; font-size: 10px; border-radius: 3px;">
-    showLockScreen: {{ showLockScreen }}
-  </div>
-  
   <!-- Lock Screen Overlay -->
   <div *ngIf="showLockScreen" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1000; background: rgba(0,0,0,0.9);">
     <app-lock-screen (unlocked)="onUnlocked()"></app-lock-screen>
