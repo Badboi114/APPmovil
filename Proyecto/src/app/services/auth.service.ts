@@ -24,10 +24,12 @@ export class AuthService {
   private isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
   private isUserLoggedInSubject = new BehaviorSubject<boolean>(false);
   private currentUserSubject = new BehaviorSubject<AuthUser | null>(null);
+  private isLoggingOutSubject = new BehaviorSubject<boolean>(false);
   
   public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
   public isUserLoggedIn$ = this.isUserLoggedInSubject.asObservable();
   public currentUser$ = this.currentUserSubject.asObservable();
+  public isLoggingOut$ = this.isLoggingOutSubject.asObservable();
 
   private readonly CURRENT_USER_KEY = 'passvault_current_user';
   
@@ -753,7 +755,12 @@ export class AuthService {
    * Logout y limpiar sesión completamente
    */
   logout(): void {
-    // Limpiar localStorage
+    console.log('🚪 Iniciando logout completo...');
+    
+    // MARCAR que estamos haciendo logout
+    this.isLoggingOutSubject.next(true);
+    
+    // Limpiar localStorage inmediatamente
     localStorage.removeItem(this.CURRENT_USER_KEY);
     localStorage.removeItem('passvault_current_user');
     localStorage.removeItem('current_user');
@@ -762,10 +769,26 @@ export class AuthService {
     // Limpiar HybridStorage
     this.hybridStorage.fastLogout();
     
-    // Resetear subjects
+    // Resetear subjects INMEDIATAMENTE
     this.currentUserSubject.next(null);
     this.isUserLoggedInSubject.next(false);
     this.isAuthenticatedSubject.next(false);
+    
+    console.log('🚪 Logout completado - todos los subjects reseteados');
+    
+    // Forzar actualización inmediata de todos los observables
+    setTimeout(() => {
+      this.currentUserSubject.next(null);
+      this.isUserLoggedInSubject.next(false);
+      this.isAuthenticatedSubject.next(false);
+      console.log('🚪 Segundo reseteo de subjects completado');
+    }, 50);
+    
+    // Mantener el flag de logout por un momento para evitar el lock screen
+    setTimeout(() => {
+      this.isLoggingOutSubject.next(false);
+      console.log('🚪 Flag de logout desactivado');
+    }, 1000);
   }
 
   /**

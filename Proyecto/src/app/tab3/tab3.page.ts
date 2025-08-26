@@ -164,9 +164,16 @@ export class Tab3Page implements OnInit {
         },
         {
           text: 'Cerrar Sesión',
-          handler: () => {
+          handler: async () => {
+            console.log('🚪 Iniciando logout desde Tab3...');
+            
+            // Hacer logout inmediato
             this.authService.logout();
-            this.router.navigate(['/login']);
+            
+            // Navegación inmediata sin delays
+            this.router.navigate(['/login'], { replaceUrl: true });
+            
+            console.log('🚪 Logout y navegación completados');
             this.showToast('Sesión cerrada exitosamente', 'success');
           }
         }

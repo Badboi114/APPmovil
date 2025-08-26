@@ -16,7 +16,7 @@
 
       <ion-card-content>
         <!-- Formulario de Login -->
-        <div *ngIf="!showPinVerification">
+        <div class="login-form">
           <ion-item class="input-item">
             <ion-label position="stacked" color="primary">
               <strong>Correo Electrónico *</strong>
@@ -62,56 +62,6 @@
                 Regístrate aquí
               </ion-button>
             </p>
-          </div>
-        </div>
-
-        <!-- Verificación de PIN -->
-        <div *ngIf="showPinVerification" class="pin-verification">
-          <div class="pin-header">
-            <ion-text color="primary">
-              <h2>🔐 Verificación de Seguridad</h2>
-            </ion-text>
-            <ion-text color="medium">
-              <p>Ingresa tu PIN de 4 dígitos para acceder</p>
-            </ion-text>
-          </div>
-
-          <ion-item class="pin-input-item">
-            <ion-label position="stacked" color="primary">
-              <strong>PIN de Seguridad *</strong>
-            </ion-label>
-            <ion-input 
-              type="number" 
-              [(ngModel)]="pin"
-              (ionInput)="onPinInput($event)"
-              placeholder="____"
-              maxlength="4"
-              fill="outline"
-              class="pin-input"
-              required>
-            </ion-input>
-          </ion-item>
-
-          <div class="pin-buttons">
-            <ion-button 
-              expand="block" 
-              color="primary" 
-              (click)="verifyPin()" 
-              [disabled]="isLoading || pin.length !== 4"
-              class="verify-button">
-              <ion-spinner *ngIf="isLoading" name="crescent"></ion-spinner>
-              <span *ngIf="!isLoading">Verificar PIN</span>
-            </ion-button>
-
-            <ion-button 
-              expand="block" 
-              fill="outline" 
-              color="medium" 
-              (click)="cancelPinVerification()"
-              [disabled]="isLoading"
-              class="cancel-button">
-              Cancelar
-            </ion-button>
           </div>
         </div>
       </ion-card-content>

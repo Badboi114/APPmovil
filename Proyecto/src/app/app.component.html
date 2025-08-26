@@ -1,6 +1,6 @@
 <ion-app>
-  <!-- Lock Screen Overlay -->
-  <div *ngIf="showLockScreen" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1000; background: rgba(0,0,0,0.9);">
+  <!-- Lock Screen Overlay - NUNCA mostrar en páginas de login/register o durante logout -->
+  <div *ngIf="showLockScreen && !isOnAuthPage() && !isLoggingOut" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1000; background: rgba(0,0,0,0.9);">
     <app-lock-screen (unlocked)="onUnlocked()"></app-lock-screen>
   </div>
   

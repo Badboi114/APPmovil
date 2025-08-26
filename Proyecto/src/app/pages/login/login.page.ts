@@ -48,9 +48,6 @@ export class LoginPage implements OnInit {
   email: string = '';
   password: string = '';
   isLoading: boolean = false;
-  showPinVerification: boolean = false;
-  pin: string = '';
-  loginCredentials: any = null;
 
   constructor(
     private authService: AuthService,
@@ -84,11 +81,10 @@ export class LoginPage implements OnInit {
       console.log(`⚡ Login completado en ${(endTime - startTime).toFixed(0)}ms`);
       
       if (result.success) {
-        // Guardar credenciales y mostrar verificación de PIN
-        this.loginCredentials = result;
-        this.showPinVerification = true;
-        this.pin = '';
-        await this.showToast('Ingresa tu PIN de 4 dígitos para continuar', 'primary');
+        // Login exitoso - navegar a tabs y dejar que AppComponent maneje el PIN
+        console.log('✅ Login exitoso - navegando a tabs para mostrar lock screen');
+        await this.showToast('Login exitoso', 'success');
+        this.router.navigate(['/tabs'], { replaceUrl: true });
       } else {
         await this.showToast(result.message || 'Credenciales inválidas', 'danger');
       }
@@ -102,47 +98,6 @@ export class LoginPage implements OnInit {
 
   goToRegister() {
     this.router.navigate(['/register']);
-  }
-
-  async verifyPin() {
-    if (!this.pin || this.pin.length !== 4) {
-      await this.showToast('El PIN debe tener exactamente 4 dígitos', 'warning');
-      return;
-    }
-
-    this.isLoading = true;
-    
-    try {
-      const result = await this.authService.verifyPin(this.pin);
-      
-      if (result.success) {
-        await this.showToast('¡Bienvenido! 🎉', 'success');
-        this.router.navigate(['/tabs']);
-      } else {
-        await this.showToast(result.message || 'PIN incorrecto. Intenta nuevamente.', 'danger');
-        this.pin = '';
-      }
-    } catch (error) {
-      console.error('❌ Error verificando PIN:', error);
-      await this.showToast('Error verificando PIN', 'danger');
-    } finally {
-      this.isLoading = false;
-    }
-  }
-
-  cancelPinVerification() {
-    this.showPinVerification = false;
-    this.pin = '';
-    this.loginCredentials = null;
-  }
-
-  onPinInput(event: any) {
-    let value = event.target.value.replace(/\D/g, '');
-    if (value.length > 4) {
-      value = value.substring(0, 4);
-    }
-    this.pin = value;
-    event.target.value = value;
   }
 
   private async showToast(message: string, color: string) {
