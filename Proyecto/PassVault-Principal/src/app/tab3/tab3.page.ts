@@ -34,9 +34,7 @@ import {
   calendarOutline,
   personAddOutline,
   logInOutline,
-  shieldCheckmarkOutline,
-  bugOutline,
-  keypadOutline
+  shieldCheckmarkOutline
 } from 'ionicons/icons';
 import { AuthService, AuthUser } from '../services/auth.service';
 
@@ -88,9 +86,7 @@ export class Tab3Page implements OnInit {
       calendarOutline,
       personAddOutline,
       logInOutline,
-      shieldCheckmarkOutline,
-      bugOutline,
-      keypadOutline
+      shieldCheckmarkOutline
     });
   }
 
@@ -184,21 +180,12 @@ export class Tab3Page implements OnInit {
   async customizePin() {
     const alert = await this.alertController.create({
       header: 'Personalizar PIN',
-      message: 'Ingresa tu PIN actual y tu nuevo PIN de 4 dígitos:',
+      message: 'Ingresa tu nuevo PIN de 4 dígitos:',
       inputs: [
-        {
-          name: 'currentPin',
-          type: 'number',
-          placeholder: 'PIN actual',
-          attributes: {
-            maxlength: 4,
-            minlength: 4
-          }
-        },
         {
           name: 'newPin',
           type: 'number',
-          placeholder: 'Nuevo PIN (ej: 1234)',
+          placeholder: 'Ej: 1234',
           attributes: {
             maxlength: 4,
             minlength: 4
@@ -211,110 +198,30 @@ export class Tab3Page implements OnInit {
           role: 'cancel'
         },
         {
-          text: 'Cambiar PIN',
-          handler: async (data) => {
-            const currentPin = data.currentPin;
-            const newPin = data.newPin;
-            
-            // Validar que ambos PINs tengan exactamente 4 dígitos
-            if (!currentPin || currentPin.length !== 4 || !/^\d{4}$/.test(currentPin)) {
-              this.showToast('El PIN actual debe tener exactamente 4 dígitos', 'warning');
-              return false; // Mantener el alert abierto
-            }
-            
-            if (!newPin || newPin.length !== 4 || !/^\d{4}$/.test(newPin)) {
-              this.showToast('El nuevo PIN debe tener exactamente 4 dígitos', 'warning');
-              return false; // Mantener el alert abierto
-            }
-
-            try {
-              console.log('🔄 Intentando cambiar PIN de', currentPin, 'a', newPin);
-              
-              // Usar changePin para cambio normal con verificación de PIN actual
-              const result = await this.authService.changePin(currentPin, newPin);
-              
-              if (result.success) {
-                this.showToast('PIN cambiado exitosamente', 'success');
-                this.loadCurrentUser(); // Recargar datos del usuario
-                
-                // Debug: Verificar estado después del cambio
-                console.log('🔍 Estado después del cambio:');
-                (this.authService as any).debugPinState();
-                
-                return true;
-              } else {
-                this.showToast(result.message, 'danger');
-                return false;
-              }
-            } catch (error) {
-              console.error('Error al cambiar PIN:', error);
-              this.showToast('Error al cambiar PIN', 'danger');
-              return false;
-            }
-          }
-        }
-      ]
-    });
-
-    await alert.present();
-  }
-
-  /**
-   * Método de depuración para diagnóstico
-   */
-  debugPinState() {
-    console.log('🔍 === DEPURACIÓN PIN ===');
-    (this.authService as any).debugPinState();
-    this.showToast('Ver consola para detalles de depuración', 'primary');
-  }
-
-  /**
-   * Método para resetear PIN directamente (solo para testing)
-   */
-  async resetPinDirect() {
-    const alert = await this.alertController.create({
-      header: 'Reset PIN (Testing)',
-      message: 'Ingresa el nuevo PIN (sin verificar el actual):',
-      inputs: [
-        {
-          name: 'newPin',
-          type: 'number',
-          placeholder: 'Nuevo PIN',
-          attributes: {
-            maxlength: 4,
-            minlength: 4
-          }
-        }
-      ],
-      buttons: [
-        {
-          text: 'Cancelar',
-          role: 'cancel'
-        },
-        {
-          text: 'Reset PIN',
+          text: 'Guardar PIN',
           handler: async (data) => {
             const newPin = data.newPin;
             
+            // Validar que el PIN tenga exactamente 4 dígitos
             if (!newPin || newPin.length !== 4 || !/^\d{4}$/.test(newPin)) {
               this.showToast('El PIN debe tener exactamente 4 dígitos', 'warning');
-              return false;
+              return false; // Mantener el alert abierto
             }
 
             try {
+              // Usar resetPin para cambio directo por admin
               const result = await this.authService.resetPin(newPin);
               if (result.success) {
-                this.showToast('PIN reseteado exitosamente', 'success');
-                this.loadCurrentUser();
-                (this.authService as any).debugPinState();
+                this.showToast('PIN personalizado guardado exitosamente', 'success');
+                this.loadCurrentUser(); // Recargar datos del usuario
                 return true;
               } else {
                 this.showToast(result.message, 'danger');
                 return false;
               }
             } catch (error) {
-              console.error('Error al resetear PIN:', error);
-              this.showToast('Error al resetear PIN', 'danger');
+              console.error('Error al personalizar PIN:', error);
+              this.showToast('Error al personalizar PIN', 'danger');
               return false;
             }
           }

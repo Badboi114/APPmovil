@@ -46,6 +46,40 @@ export class AuthService {
     // Exponer en ventana global para depuración
     (window as any).authService = this;
     (window as any).clearAllData = () => this.clearAllData();
+    (window as any).debugUser = () => this.debugUserData();
+    (window as any).testPinChange = (newPin: string) => this.testPinChange(newPin);
+    (window as any).clearAllStorage = () => this.clearAllStorage();
+  }
+
+  /**
+   * Función de depuración para ver todos los datos del usuario
+   */
+  debugUserData(): void {
+    console.log('🔍 === DEBUG USER DATA ===');
+    
+    try {
+      const hybridUser = this.hybridStorage.getCurrentUser();
+      console.log('🏪 HybridStorage:', hybridUser);
+      
+      const localUser = JSON.parse(localStorage.getItem(this.CURRENT_USER_KEY) || 'null');
+      console.log('💾 localStorage (CURRENT_USER_KEY):', localUser);
+      
+      const localUser2 = JSON.parse(localStorage.getItem('passvault_current_user') || 'null');
+      console.log('💾 localStorage (passvault_current_user):', localUser2);
+      
+      const users = JSON.parse(localStorage.getItem('passvault_users') || '[]');
+      console.log('📝 Lista de usuarios:', users);
+      
+      const subjectUser = this.currentUserSubject.value;
+      console.log('📡 Subject actual:', subjectUser);
+      
+      const currentUser = this.getCurrentUser();
+      console.log('👤 getCurrentUser() resultado:', currentUser);
+      
+      console.log('🔍 === FIN DEBUG ===');
+    } catch (error) {
+      console.error('❌ Error en debug:', error);
+    }
   }
 
   /**
@@ -370,17 +404,33 @@ export class AuthService {
     }
 
     try {
+      // Verificar TODAS las fuentes de datos del usuario
+      console.log('🔍 Verificando fuentes de datos...');
+      
+      const hybridUser = this.hybridStorage.getCurrentUser();
+      console.log('🏪 HybridStorage usuario:', hybridUser?.email, 'PIN:', hybridUser?.pin);
+      
+      const localUser = JSON.parse(localStorage.getItem(this.CURRENT_USER_KEY) || 'null');
+      console.log('� localStorage usuario:', localUser?.email, 'PIN:', localUser?.pin);
+      
+      const subjectUser = this.currentUserSubject.value;
+      console.log('📡 Subject usuario:', subjectUser?.email, 'PIN:', subjectUser?.pin);
+      
       const currentUser = this.getCurrentUser();
-      console.log('👤 Usuario actual para verificar PIN:', currentUser);
+      console.log('👤 Usuario final seleccionado:', currentUser?.email, 'PIN:', currentUser?.pin);
       
       if (!currentUser) {
         return { success: false, message: 'Usuario no encontrado' };
       }
       
-      console.log('🔍 Comparando PINs - Ingresado:', pin, 'Guardado:', currentUser.pin);
+      console.log('🔍 Comparando PINs - Ingresado:', pin, 'Guardado:', currentUser.pin, 'Tipos:', typeof pin, typeof currentUser.pin);
+      
+      // Asegurar que ambos sean strings para comparación
+      const pinString = String(pin);
+      const savedPinString = String(currentUser.pin);
       
       // Verificación del PIN
-      if (currentUser.pin === pin) {
+      if (savedPinString === pinString) {
         console.log('✅ PIN correcto!');
         // PIN correcto - resetear intentos fallidos
         this.resetFailedAttempts();
@@ -393,7 +443,7 @@ export class AuthService {
         
         return { success: true, message: 'Acceso concedido' };
       } else {
-        console.log('❌ PIN incorrecto');
+        console.log('❌ PIN incorrecto - Ingresado:', pinString, 'Esperado:', savedPinString);
         // PIN incorrecto - incrementar intentos fallidos
         this.incrementFailedAttempts();
         return { success: false, message: 'PIN incorrecto. Intenta nuevamente.' };
@@ -441,71 +491,83 @@ export class AuthService {
   async changePin(currentPin: string, newPin: string): Promise<{ success: boolean; message: string }> {
     console.log('🔄 Cambiando PIN...', { currentPin, newPin });
     
+    // Verificar PIN actual SIN cambiar estado de autenticación
+    const currentUser = this.getCurrentUser();
+    if (!currentUser) {
+      return { success: false, message: 'Usuario no encontrado' };
+    }
+    
+    console.log('🔍 Verificando PIN actual - Ingresado:', currentPin, 'Guardado:', currentUser.pin);
+    
+    if (currentUser.pin !== currentPin) {
+      return { success: false, message: 'PIN actual incorrecto' };
+    }
+    
+    // Validar nuevo PIN
+    const newPinValidation = this.validatePinFormat(newPin);
+    if (!newPinValidation.valid) {
+      return { success: false, message: newPinValidation.message };
+    }
+    
     try {
-      const currentUser = this.getCurrentUser();
-      if (!currentUser) {
-        return { success: false, message: 'Usuario no encontrado' };
-      }
-      
-      console.log('🔍 Verificando PIN actual - Ingresado:', currentPin, 'Guardado:', currentUser.pin);
-      
-      // Verificar PIN actual SIN llamar a verifyPin() para evitar cambios de estado
-      if (currentUser.pin !== currentPin) {
-        console.log('❌ PIN actual incorrecto');
-        return { success: false, message: 'PIN actual incorrecto' };
-      }
-      
-      // Validar nuevo PIN
-      const newPinValidation = this.validatePinFormat(newPin);
-      if (!newPinValidation.valid) {
-        return { success: false, message: newPinValidation.message };
-      }
-      
       console.log('💾 Actualizando PIN de', currentPin, 'a', newPin);
       
-      // Crear usuario actualizado
+      // Actualizar PIN en el usuario
       const updatedUser = { 
         ...currentUser, 
         pin: newPin, 
         pinUpdated: new Date().toISOString() 
       };
       
-      // 1. Actualizar en HybridStorage (esto actualiza tanto la lista de usuarios como el usuario actual)
-      const hybridResult = this.hybridStorage.updateUser(updatedUser);
-      if (!hybridResult.success) {
-        console.warn('⚠️ Error actualizando en HybridStorage:', hybridResult.message);
-      }
+      // Actualizar en HybridStorage primero
+      await this.updateUserInStorage(updatedUser);
       
-      // 2. Actualizar en localStorage principal (por compatibilidad)
-      localStorage.setItem(this.CURRENT_USER_KEY, JSON.stringify(updatedUser));
-      console.log('✅ PIN actualizado en localStorage principal');
-      
-      // 3. Actualizar el subject (esto actualiza la UI)
-      this.currentUserSubject.next(updatedUser);
-      console.log('✅ Subject actualizado');
-      
-      // 4. Forzar sincronización en múltiples ubicaciones
+      // Forzar sincronización en todos los almacenamientos
       this.forcePinSync(newPin);
-      
-      // 5. Verificación inmediata
-      setTimeout(() => {
-        const verifyUser = this.getCurrentUser();
-        if (verifyUser && verifyUser.pin === newPin) {
-          console.log('✅ VERIFICACIÓN EXITOSA: PIN se guardó correctamente:', newPin);
-        } else {
-          console.error('❌ VERIFICACIÓN FALLIDA: PIN no coincide', {
-            expected: newPin,
-            actual: verifyUser?.pin,
-            user: verifyUser
-          });
-        }
-      }, 100);
       
       console.log('✅ PIN actualizado exitosamente');
       return { success: true, message: 'PIN actualizado exitosamente' };
     } catch (error) {
       console.error('❌ Error cambiando PIN:', error);
-      return { success: false, message: 'Error actualizando PIN' };
+      return { success: false, message: 'Error interno cambiando PIN' };
+    }
+  }
+
+  /**
+   * Actualizar usuario en todos los almacenamientos
+   */
+  private async updateUserInStorage(updatedUser: any): Promise<void> {
+    try {
+      console.log('💾 Actualizando usuario en almacenamiento...', updatedUser.email);
+      
+      // Actualizar en HybridStorage PRIMERO
+      const hybridResult = this.hybridStorage.updateUser(updatedUser);
+      if (!hybridResult.success) {
+        console.warn('⚠️ No se pudo actualizar en HybridStorage:', hybridResult.message);
+      }
+      
+      // Actualizar usuario actual en localStorage
+      localStorage.setItem(this.CURRENT_USER_KEY, JSON.stringify(updatedUser));
+      localStorage.setItem('passvault_current_user', JSON.stringify(updatedUser));
+      
+      // Actualizar en la lista de usuarios
+      const users = JSON.parse(localStorage.getItem('passvault_users') || '[]');
+      const userIndex = users.findIndex((u: any) => u.id === updatedUser.id);
+      
+      if (userIndex !== -1) {
+        users[userIndex] = updatedUser;
+        localStorage.setItem('passvault_users', JSON.stringify(users));
+        console.log('✅ Usuario actualizado en lista de usuarios');
+      }
+      
+      // Actualizar el subject para notificar cambios
+      this.currentUserSubject.next(updatedUser);
+      
+      console.log('✅ Usuario actualizado en TODOS los almacenamientos');
+      
+    } catch (error) {
+      console.error('❌ Error actualizando usuario en almacenamiento:', error);
+      throw error;
     }
   }
 
@@ -534,15 +596,15 @@ export class AuthService {
       
       const updatedUser = { ...currentUser, pin: newPin, pinReset: new Date().toISOString() };
       
-      // 1. Actualizar en HybridStorage (esto actualiza tanto la lista de usuarios como el usuario actual)
+      // 1. Actualizar usando el método oficial de HybridStorage
       const hybridResult = this.hybridStorage.updateUser(updatedUser);
       if (hybridResult.success) {
-        console.log('✅ PIN reseteado en HybridStorage');
+        console.log('✅ PIN actualizado en HybridStorage');
       } else {
         console.warn('⚠️ Error actualizando en HybridStorage:', hybridResult.message);
       }
       
-      // 2. Actualizar en localStorage principal (por compatibilidad)
+      // 2. Guardar en localStorage principal
       localStorage.setItem(this.CURRENT_USER_KEY, JSON.stringify(updatedUser));
       console.log('✅ PIN reseteado guardado en localStorage principal');
       
@@ -578,7 +640,33 @@ export class AuthService {
   // MÉTODOS AUXILIARES
   // ===============================
   getCurrentUser(): AuthUser | null {
-    return this.currentUserSubject.value;
+    // Obtener siempre los datos más frescos del almacenamiento
+    try {
+      // Primero intentar desde HybridStorage
+      const hybridUser = this.hybridStorage.getCurrentUser();
+      if (hybridUser) {
+        console.log('👤 Usuario obtenido desde HybridStorage:', hybridUser.email, 'PIN:', hybridUser.pin);
+        return hybridUser;
+      }
+      
+      // Si no está en HybridStorage, intentar desde localStorage
+      const localUser = JSON.parse(localStorage.getItem(this.CURRENT_USER_KEY) || 'null');
+      if (localUser) {
+        console.log('👤 Usuario obtenido desde localStorage:', localUser.email, 'PIN:', localUser.pin);
+        return localUser;
+      }
+      
+      // Como último recurso, usar el subject
+      const subjectUser = this.currentUserSubject.value;
+      if (subjectUser) {
+        console.log('👤 Usuario obtenido desde subject:', subjectUser.email, 'PIN:', subjectUser.pin);
+      }
+      
+      return subjectUser;
+    } catch (error) {
+      console.error('❌ Error obteniendo usuario actual:', error);
+      return this.currentUserSubject.value;
+    }
   }
 
   // Métodos de compatibilidad para componentes existentes
@@ -790,9 +878,9 @@ export class AuthService {
 
       const updatedUser = { ...currentUser, pin: newPin, lastSync: new Date().toISOString() };
       
-      console.log('🔄 Iniciando sincronización forzada del PIN...');
+      console.log('🔄 Forzando sincronización de PIN en todos los almacenamientos...');
       
-      // 1. Sincronizar en múltiples ubicaciones de localStorage
+      // Sincronizar en múltiples ubicaciones
       const keys = [
         this.CURRENT_USER_KEY,
         'passvault_current_user',
@@ -809,66 +897,89 @@ export class AuthService {
         }
       });
       
-      // 2. Actualizar en la lista de usuarios de HybridStorage
-      try {
-        const users = JSON.parse(localStorage.getItem('passvault_users') || '[]');
-        const userIndex = users.findIndex((u: any) => u.id === currentUser.id || u.email === currentUser.email);
-        
-        if (userIndex !== -1) {
-          users[userIndex] = {
-            ...users[userIndex],
-            pin: newPin,
-            updated_at: new Date().toISOString()
-          };
-          localStorage.setItem('passvault_users', JSON.stringify(users));
-          console.log('✅ PIN sincronizado en lista de usuarios');
-        }
-      } catch (error) {
-        console.warn('⚠️ No se pudo actualizar lista de usuarios:', error);
-      }
-      
-      // 3. Actualizar subject
+      // Actualizar subject
       this.currentUserSubject.next(updatedUser);
       
-      console.log('🔄 PIN sincronizado en todos los almacenamientos');
+      // Verificar que el PIN se guardó correctamente
+      const verificationUser = this.getCurrentUser();
+      if (verificationUser && verificationUser.pin === newPin) {
+        console.log('✅ PIN verificado correctamente:', newPin);
+      } else {
+        console.error('❌ Error: PIN no se guardó correctamente', {
+          expected: newPin,
+          actual: verificationUser?.pin
+        });
+      }
+      
     } catch (error) {
-      console.error('❌ Error en sincronización forzada:', error);
+      console.error('❌ Error en forcePinSync:', error);
     }
   }
 
   /**
-   * Método de depuración para verificar estado del PIN
+   * Función de testing para cambio de PIN (accesible desde consola)
    */
-  debugPinState(): void {
-    console.log('🔍 ESTADO DEL PIN - DEBUG:');
+  async testPinChange(newPin: string): Promise<void> {
+    console.log('🧪 INICIANDO TEST DE CAMBIO DE PIN:', newPin);
     
-    const currentUser = this.getCurrentUser();
-    console.log('👤 Usuario actual (desde subject):', currentUser);
+    // 1. Estado antes del cambio
+    console.log('📊 ESTADO ANTES:');
+    this.debugUserData();
     
-    // Verificar en diferentes ubicaciones de localStorage
-    const locations = [
+    try {
+      // 2. Ejecutar cambio de PIN usando resetPin (método más directo)
+      console.log('🔄 Ejecutando resetPin...');
+      const result = await this.resetPin(newPin);
+      console.log('📋 Resultado resetPin:', result);
+      
+      // 3. Verificar estado después del cambio
+      console.log('📊 ESTADO DESPUÉS:');
+      setTimeout(() => {
+        this.debugUserData();
+        
+        // 4. Test de verificación
+        console.log('🔍 PROBANDO VERIFICACIÓN DE PIN...');
+        this.verifyPin(newPin).then(verifyResult => {
+          console.log('🎯 Resultado verificación:', verifyResult);
+          
+          if (verifyResult.success) {
+            console.log('✅ ¡TEST EXITOSO! El PIN se cambió y verifica correctamente');
+          } else {
+            console.log('❌ ¡TEST FALLIDO! El PIN no verifica correctamente');
+          }
+        });
+      }, 200);
+      
+    } catch (error) {
+      console.error('❌ Error en test de cambio de PIN:', error);
+    }
+  }
+
+  /**
+   * Función para limpiar completamente el almacenamiento (solo para debugging)
+   */
+  clearAllStorage(): void {
+    console.log('🧹 LIMPIANDO TODO EL ALMACENAMIENTO...');
+    
+    // Limpiar todas las keys conocidas
+    const keysToRemove = [
+      this.CURRENT_USER_KEY,
       'passvault_current_user',
-      'current_user', 
-      'user_data',
-      'passvault_users'
+      'passvault_users',
+      'current_user',
+      'user_data'
     ];
     
-    locations.forEach(key => {
-      try {
-        const data = localStorage.getItem(key);
-        if (data) {
-          const parsed = JSON.parse(data);
-          if (Array.isArray(parsed)) {
-            console.log(`📂 ${key} (array):`, parsed.map(u => ({ email: u.email, pin: u.pin })));
-          } else {
-            console.log(`📄 ${key}:`, { email: parsed.email, pin: parsed.pin });
-          }
-        } else {
-          console.log(`❌ ${key}: No encontrado`);
-        }
-      } catch (error) {
-        console.error(`❌ Error leyendo ${key}:`, error);
-      }
+    keysToRemove.forEach(key => {
+      localStorage.removeItem(key);
+      console.log(`🗑️ Eliminado: ${key}`);
     });
+    
+    // Limpiar subjects
+    this.currentUserSubject.next(null);
+    this.isUserLoggedInSubject.next(false);
+    this.isAuthenticatedSubject.next(false);
+    
+    console.log('✅ Todo el almacenamiento limpiado');
   }
 }
