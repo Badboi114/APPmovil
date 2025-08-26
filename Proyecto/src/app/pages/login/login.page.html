@@ -1,0 +1,120 @@
+<ion-header [translucent]="true">
+  <ion-toolbar color="primary">
+    <ion-title>PassVault - Iniciar Sesión</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="login-content">
+  <div class="login-container">
+    <ion-card class="login-card">
+      <ion-card-header>
+        <ion-card-title class="text-center">🔐 PassVault</ion-card-title>
+        <ion-text color="medium" class="text-center">
+          <p>Inicia sesión para acceder a tu bóveda segura</p>
+        </ion-text>
+      </ion-card-header>
+
+      <ion-card-content>
+        <!-- Formulario de Login -->
+        <div *ngIf="!showPinVerification">
+          <ion-item class="input-item">
+            <ion-label position="stacked" color="primary">
+              <strong>Correo Electrónico *</strong>
+            </ion-label>
+            <ion-input 
+              type="email" 
+              [(ngModel)]="email" 
+              placeholder="ejemplo@correo.com"
+              fill="outline"
+              required>
+            </ion-input>
+          </ion-item>
+
+          <ion-item class="input-item">
+            <ion-label position="stacked" color="primary">
+              <strong>Contraseña *</strong>
+            </ion-label>
+            <ion-input 
+              type="password" 
+              [(ngModel)]="password" 
+              placeholder="Tu contraseña"
+              fill="outline"
+              required>
+            </ion-input>
+          </ion-item>
+
+          <ion-button 
+            expand="block" 
+            color="primary" 
+            (click)="login()" 
+            [disabled]="isLoading"
+            class="login-button">
+            <ion-spinner *ngIf="isLoading" name="crescent"></ion-spinner>
+            <span *ngIf="!isLoading">Iniciar Sesión</span>
+          </ion-button>
+
+          <div class="register-link">
+            <p class="register-text">¿No tienes cuenta? 
+              <ion-button 
+                fill="clear" 
+                color="primary" 
+                (click)="goToRegister()">
+                Regístrate aquí
+              </ion-button>
+            </p>
+          </div>
+        </div>
+
+        <!-- Verificación de PIN -->
+        <div *ngIf="showPinVerification" class="pin-verification">
+          <div class="pin-header">
+            <ion-text color="primary">
+              <h2>🔐 Verificación de Seguridad</h2>
+            </ion-text>
+            <ion-text color="medium">
+              <p>Ingresa tu PIN de 4 dígitos para acceder</p>
+            </ion-text>
+          </div>
+
+          <ion-item class="pin-input-item">
+            <ion-label position="stacked" color="primary">
+              <strong>PIN de Seguridad *</strong>
+            </ion-label>
+            <ion-input 
+              type="number" 
+              [(ngModel)]="pin"
+              (ionInput)="onPinInput($event)"
+              placeholder="____"
+              maxlength="4"
+              fill="outline"
+              class="pin-input"
+              required>
+            </ion-input>
+          </ion-item>
+
+          <div class="pin-buttons">
+            <ion-button 
+              expand="block" 
+              color="primary" 
+              (click)="verifyPin()" 
+              [disabled]="isLoading || pin.length !== 4"
+              class="verify-button">
+              <ion-spinner *ngIf="isLoading" name="crescent"></ion-spinner>
+              <span *ngIf="!isLoading">Verificar PIN</span>
+            </ion-button>
+
+            <ion-button 
+              expand="block" 
+              fill="outline" 
+              color="medium" 
+              (click)="cancelPinVerification()"
+              [disabled]="isLoading"
+              class="cancel-button">
+              Cancelar
+            </ion-button>
+          </div>
+        </div>
+      </ion-card-content>
+    </ion-card>
+  </div>
+</ion-content>
