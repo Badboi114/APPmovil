@@ -12,8 +12,18 @@ import {
 } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import * as Notifications from 'expo-notifications';
 
 const Tab = createBottomTabNavigator();
+
+// Configuración de notificaciones
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 
 // Base de datos local simulada
 class AppointmentDB {
@@ -37,15 +47,79 @@ class AppointmentDB {
       createdAt: new Date().toISOString()
     };
     this.appointments.push(newAppointment);
+    
+    // Programar notificaciones
+    this.scheduleNotifications(newAppointment);
+    
     return newAppointment;
+  }
+
+  static async scheduleNotifications(appointment) {
+    try {
+      // Solicitar permisos de notificación
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status !== 'granted') {
+        console.log('Permisos de notificación denegados');
+        return;
+      }
+
+      const appointmentDate = new Date(appointment.date);
+      const [hours, minutes] = appointment.time.split(':');
+      appointmentDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+      
+      // Notificación 1 día antes
+      const oneDayBefore = new Date(appointmentDate.getTime() - 24 * 60 * 60 * 1000);
+      
+      if (oneDayBefore > new Date()) {
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: '🩺 Recordatorio de Cita Médica',
+            body: `Mañana tienes cita de ${appointment.specialty} con ${appointment.doctor} a las ${appointment.time}`,
+            data: { appointmentId: appointment.id },
+          },
+          trigger: { date: oneDayBefore },
+        });
+      }
+      
+      // Notificación 1 hora antes
+      const oneHourBefore = new Date(appointmentDate.getTime() - 60 * 60 * 1000);
+      
+      if (oneHourBefore > new Date()) {
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: '⏰ Tu cita es en 1 hora',
+            body: `Cita de ${appointment.specialty} con ${appointment.doctor} a las ${appointment.time}`,
+            data: { appointmentId: appointment.id },
+          },
+          trigger: { date: oneHourBefore },
+        });
+      }
+      
+      console.log('Notificaciones programadas para la cita:', appointment.id);
+    } catch (error) {
+      console.log('Error programando notificaciones:', error);
+    }
   }
 
   static getAppointments() {
     return this.appointments;
   }
 
-  static cancelAppointment(id) {
+  static async cancelAppointment(id) {
     this.appointments = this.appointments.filter(apt => apt.id !== id);
+    
+    // Cancelar notificaciones asociadas
+    try {
+      const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+      for (const notification of scheduled) {
+        if (notification.content.data?.appointmentId === id) {
+          await Notifications.cancelScheduledNotificationAsync(notification.identifier);
+        }
+      }
+      console.log('Notificaciones canceladas para la cita:', id);
+    } catch (error) {
+      console.log('Error cancelando notificaciones:', error);
+    }
   }
 
   static getDoctorsBySpecialty(specialty) {
@@ -67,6 +141,66 @@ class AppointmentDB {
 
   static getAllDoctors() {
     return this.doctors;
+  }
+
+  static createSampleAppointments(userEmail) {
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    
+    const nextWeek = new Date(today);
+    nextWeek.setDate(today.getDate() + 7);
+    
+    const lastWeek = new Date(today);
+    lastWeek.setDate(today.getDate() - 7);
+
+    const sampleAppointments = [
+      {
+        id: Date.now() + 1,
+        specialty: 'Cardiología',
+        doctor: 'Dr. Carlos García',
+        date: tomorrow.toISOString(),
+        time: '10:00',
+        patientName: 'Paciente Ejemplo',
+        patientPhone: '+54 9 123 456 789',
+        patientEmail: userEmail,
+        reason: 'Consulta de control',
+        status: 'confirmada',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: Date.now() + 2,
+        specialty: 'Dermatología',
+        doctor: 'Dra. María López',
+        date: nextWeek.toISOString(),
+        time: '15:30',
+        patientName: 'Paciente Ejemplo',
+        patientPhone: '+54 9 123 456 789',
+        patientEmail: userEmail,
+        reason: 'Revisión de piel',
+        status: 'confirmada',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: Date.now() + 3,
+        specialty: 'Medicina General',
+        doctor: 'Dr. Luis Rodríguez',
+        date: lastWeek.toISOString(),
+        time: '09:00',
+        patientName: 'Paciente Ejemplo',
+        patientPhone: '+54 9 123 456 789',
+        patientEmail: userEmail,
+        reason: 'Chequeo general',
+        status: 'completada',
+        createdAt: new Date().toISOString()
+      }
+    ];
+
+    // Solo agregar si no existen citas para este usuario
+    const existingAppointments = this.appointments.filter(apt => apt.patientEmail === userEmail);
+    if (existingAppointments.length === 0) {
+      this.appointments.push(...sampleAppointments);
+    }
   }
 }
 
@@ -251,10 +385,20 @@ function NewAppointmentScreen({ user }) {
       return;
     }
 
+    // Convertir fecha de DD/MM/AAAA a formato válido
+    let appointmentDate = new Date().toISOString();
+    if (formData.date) {
+      const [day, month, year] = formData.date.split('/');
+      if (day && month && year) {
+        const validDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+        appointmentDate = validDate.toISOString();
+      }
+    }
+
     const appointment = {
       ...formData,
       patientEmail: user,
-      date: formData.date || new Date().toISOString(),
+      date: appointmentDate,
     };
 
     const newAppointment = AppointmentDB.addAppointment(appointment);
@@ -465,8 +609,8 @@ function MyAppointmentsScreen({ user }) {
         {
           text: 'Sí, Cancelar',
           style: 'destructive',
-          onPress: () => {
-            AppointmentDB.cancelAppointment(appointment.id);
+          onPress: async () => {
+            await AppointmentDB.cancelAppointment(appointment.id);
             loadAppointments();
             Alert.alert('✅ Cita cancelada correctamente');
           }
@@ -533,7 +677,12 @@ function MyAppointmentsScreen({ user }) {
             <Text style={styles.appointmentDoctorCard}>{appointment.doctor}</Text>
             <Text style={styles.appointmentPatient}>Paciente: {appointment.patientName}</Text>
             <Text style={styles.appointmentDateTime}>
-              📅 {appointment.date} - ⏰ {appointment.time}
+              📅 {new Date(appointment.date).toLocaleDateString('es-ES', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              })} - ⏰ {appointment.time}
             </Text>
             
             {appointment.reason && (
@@ -568,12 +717,30 @@ function ProfileScreen({ user, onLogout }) {
   const [notifications, setNotifications] = useState(true);
   const [showManageDoctors, setShowManageDoctors] = useState(false);
 
-  const toggleNotifications = () => {
-    setNotifications(!notifications);
-    Alert.alert(
-      'Notificaciones',
-      `Notificaciones ${!notifications ? 'activadas' : 'desactivadas'}`
-    );
+  const toggleNotifications = async () => {
+    if (!notifications) {
+      // Solicitar permisos cuando se activan
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status === 'granted') {
+        setNotifications(true);
+        Alert.alert(
+          '✅ Notificaciones Activadas',
+          'Recibirás recordatorios de tus citas médicas'
+        );
+      } else {
+        Alert.alert(
+          '❌ Permisos Denegados',
+          'Para recibir notificaciones, debes permitir los permisos en la configuración'
+        );
+      }
+    } else {
+      // Desactivar notificaciones
+      setNotifications(false);
+      Alert.alert(
+        '🔕 Notificaciones Desactivadas',
+        'Ya no recibirás recordatorios de citas'
+      );
+    }
   };
 
   if (showManageDoctors) {
@@ -808,6 +975,8 @@ export default function App() {
   }, []);
 
   const handleLogin = (userEmail) => {
+    // Crear citas de ejemplo para demostrar los filtros
+    AppointmentDB.createSampleAppointments(userEmail);
     setUser(userEmail);
     setIsAuthenticated(true);
   };
