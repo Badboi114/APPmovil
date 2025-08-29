@@ -27,21 +27,46 @@ Notifications.setNotificationHandler({
 
 // Base de datos local simulada
 class AppointmentDB {
+  static async cancelAllNotificationsForUser(user) {
+    if (!this.users[user] || !this.users[user].appointments) return;
+    for (const appt of this.users[user].appointments) {
+      if (appt.notificationId) {
+        try {
+          await Notifications.cancelScheduledNotificationAsync(appt.notificationId);
+        } catch {}
+      }
+    }
+  }
   static users = {}; // { email: { password, profile, appointments: [] } }
-  static doctors = [
-    { id: 1, name: 'Dr. Carlos García', specialty: 'Cardiología', schedule: ['09:00', '10:00', '11:00', '14:00', '15:00'] },
-    { id: 2, name: 'Dra. María López', specialty: 'Dermatología', schedule: ['08:30', '09:30', '10:30', '15:30', '16:30'] },
-    { id: 3, name: 'Dr. Juan Pérez', specialty: 'Neurología', schedule: ['09:00', '10:30', '14:00', '15:30'] },
-    { id: 4, name: 'Dra. Ana Martín', specialty: 'Pediatría', schedule: ['08:00', '09:00', '10:00', '16:00', '17:00'] },
-    { id: 5, name: 'Dr. Luis Rodríguez', specialty: 'Medicina General', schedule: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00'] },
-    { id: 6, name: 'Dra. Carmen Silva', specialty: 'Ginecología', schedule: ['09:30', '10:30', '14:30', '15:30'] },
-    { id: 7, name: 'Dr. Miguel Torres', specialty: 'Ortopedia', schedule: ['08:30', '10:00', '11:30', '15:00'] },
-    { id: 8, name: 'Dra. Elena Vega', specialty: 'Psiquiatría', schedule: ['14:00', '15:00', '16:00', '17:00'] }
-  ];
+  // Ahora los doctores son por usuario
+  static getDoctors(user) {
+    if (!this.users[user]) return [];
+    if (!this.users[user].doctors) {
+      // Inicializar con los doctores por defecto
+      this.users[user].doctors = [
+        { id: 1, name: 'Dr. Carlos García', specialty: 'Cardiología', schedule: ['09:00', '10:00', '11:00', '14:00', '15:00'] },
+        { id: 2, name: 'Dra. María López', specialty: 'Dermatología', schedule: ['08:30', '09:30', '10:30', '15:30', '16:30'] },
+        { id: 3, name: 'Dr. Juan Pérez', specialty: 'Neurología', schedule: ['09:00', '10:30', '14:00', '15:30'] },
+        { id: 4, name: 'Dra. Ana Martín', specialty: 'Pediatría', schedule: ['08:00', '09:00', '10:00', '16:00', '17:00'] },
+        { id: 5, name: 'Dr. Luis Rodríguez', specialty: 'Medicina General', schedule: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00'] },
+        { id: 6, name: 'Dra. Carmen Silva', specialty: 'Ginecología', schedule: ['09:30', '10:30', '14:30', '15:30'] },
+        { id: 7, name: 'Dr. Miguel Torres', specialty: 'Ortopedia', schedule: ['08:30', '10:00', '11:30', '15:00'] },
+        { id: 8, name: 'Dra. Elena Vega', specialty: 'Psiquiatría', schedule: ['14:00', '15:00', '16:00', '17:00'] }
+      ];
+    }
+    return this.users[user].doctors;
+  }
 
   static addAppointment(appointment) {
     const { patientEmail } = appointment;
-    if (!this.users[patientEmail]) return null;
+      if (!this.users[patientEmail]) return false;
+      // Validar duplicados: mismo doctor, fecha y hora
+      const exists = this.users[patientEmail].appointments.some(a =>
+        a.doctor === appointment.doctor &&
+        a.date === appointment.date &&
+        a.time === appointment.time
+      );
+      if (exists) return false;
     const newAppointment = {
       id: Date.now(),
       ...appointment,
@@ -126,25 +151,26 @@ class AppointmentDB {
     }
   }
 
-  static getDoctorsBySpecialty(specialty) {
-    return this.doctors.filter(doc => doc.specialty === specialty);
+  static getDoctorsBySpecialty(user, specialty) {
+    return this.getDoctors(user).filter(doc => doc.specialty === specialty);
   }
 
   static getAllSpecialties() {
-    return [...new Set(this.doctors.map(doc => doc.specialty))];
+    return [...new Set(this.getDoctors(user).map(doc => doc.specialty))];
   }
 
-  static updateDoctorName(doctorId, newName) {
-    const doctorIndex = this.doctors.findIndex(doc => doc.id === doctorId);
+  static updateDoctorName(user, doctorId, newName) {
+    const doctors = this.getDoctors(user);
+    const doctorIndex = doctors.findIndex(doc => doc.id === doctorId);
     if (doctorIndex !== -1) {
-      this.doctors[doctorIndex].name = newName;
+      doctors[doctorIndex].name = newName;
       return true;
     }
     return false;
   }
 
-  static getAllDoctors() {
-    return this.doctors;
+  static getAllDoctors(user) {
+    return this.getDoctors(user);
   }
 
   static createSampleAppointments(userEmail) {
@@ -476,7 +502,7 @@ function NewAppointmentScreen({ user }) {
 
   const selectSpecialty = (specialty) => {
     setFormData({ ...formData, specialty, doctor: '', time: '' });
-    setAvailableDoctors(AppointmentDB.getDoctorsBySpecialty(specialty));
+  setAvailableDoctors(AppointmentDB.getDoctorsBySpecialty(user, specialty));
     setStep(2);
   };
 
@@ -490,29 +516,37 @@ function NewAppointmentScreen({ user }) {
     if (formData.time && formData.date) setStep(4);
   };
 
-  const createAppointment = () => {
-    if (!formData.patientName || !formData.patientPhone) {
-      Alert.alert('Error', 'Por favor completa todos los campos');
-      return;
-    }
-
-    // Convertir fecha de DD/MM/AAAA a formato válido
-    let appointmentDate = new Date().toISOString();
-    if (formData.date) {
-      const [day, month, year] = formData.date.split('/');
-      if (day && month && year) {
-        const validDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-        appointmentDate = validDate.toISOString();
+    const handleCreateAppointment = () => {
+      if (!selectedDoctor || !date || !time) {
+        Alert.alert('Error', 'Por favor completa todos los campos');
+        return;
       }
-    }
-
-    const appointment = {
-      ...formData,
-      patientEmail: user,
-      date: appointmentDate,
+      const appointment = {
+        doctor: selectedDoctor,
+        date,
+        time,
+        patientEmail: user,
+      };
+      const id = AppointmentDB.addAppointment(appointment);
+      if (id) {
+        scheduleNotification(date, time, selectedDoctor);
+        Alert.alert('Cita creada', 'Tu cita fue registrada correctamente');
+        setDate('');
+        setTime('');
+        setSelectedDoctor('');
+        setRefresh(!refresh);
+      } else {
+        // Verificar si fue por duplicado
+        const exists = AppointmentDB.getAppointments(user).some(a =>
+          a.doctor === selectedDoctor && a.date === date && a.time === time
+        );
+        if (exists) {
+          Alert.alert('Cita duplicada', 'Ya tienes una cita con este doctor en ese horario.');
+        } else {
+          Alert.alert('Error', 'No se pudo crear la cita');
+        }
+      }
     };
-
-    const newAppointment = AppointmentDB.addAppointment(appointment);
 
     Alert.alert(
       '✅ ¡Cita Agendada!',
@@ -694,7 +728,7 @@ function NewAppointmentScreen({ user }) {
       {renderStepContent()}
     </ScrollView>
   );
-}
+// Llave eliminada para corregir error de sintaxis
 
 // Pantalla Mis Citas
 function MyAppointmentsScreen({ user }) {
@@ -826,7 +860,9 @@ function ProfileScreen({ user, onLogout }) {
   const [notifications, setNotifications] = useState(true);
   const [showManageDoctors, setShowManageDoctors] = useState(false);
   const [showUsersList, setShowUsersList] = useState(false);
-
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editPhone, setEditPhone] = useState('');
   // Obtener perfil del usuario actual
   const userProfile = AppointmentDB.getUserProfile(user);
   const allUsers = AppointmentDB.getAllUsers();
@@ -861,10 +897,16 @@ function ProfileScreen({ user, onLogout }) {
     return <ManageDoctorsScreen onBack={() => setShowManageDoctors(false)} />;
   }
 
+  const handleLogout = async () => {
+    // Cancelar notificaciones del usuario
+    if (AppointmentDB.cancelAllNotificationsForUser) {
+      await AppointmentDB.cancelAllNotificationsForUser(user);
+    }
+    onLogout();
+  };
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>👤 Mi Perfil</Text>
-      
       {/* Información del usuario */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>📋 Información Personal</Text>
@@ -872,26 +914,78 @@ function ProfileScreen({ user, onLogout }) {
           <Text style={styles.infoLabel}>Email:</Text>
           <Text style={styles.infoValue}>{user}</Text>
         </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Nombre:</Text>
-          <Text style={styles.infoValue}>{userProfile?.name || 'No definido'}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Teléfono:</Text>
-          <Text style={styles.infoValue}>{userProfile?.phone || '+54 9 123 456 789'}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Registrado:</Text>
-          <Text style={styles.infoValue}>
-            {AppointmentDB.users[user]?.registeredAt ? 
-              new Date(AppointmentDB.users[user].registeredAt).toLocaleDateString('es-ES') : 
-              'Fecha no disponible'
-            }
-          </Text>
-        </View>
-        <TouchableOpacity style={styles.editButton}>
-          <Text style={styles.editButtonText}>✏️ Editar Información</Text>
-        </TouchableOpacity>
+        {editing ? (
+          <>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Nombre:</Text>
+              <TextInput
+                style={styles.input}
+                value={editName}
+                onChangeText={setEditName}
+                placeholder="Nombre completo"
+              />
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Teléfono:</Text>
+              <TextInput
+                style={styles.input}
+                value={editPhone}
+                onChangeText={setEditPhone}
+                placeholder="Teléfono"
+                keyboardType="phone-pad"
+              />
+            </View>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
+              <TouchableOpacity
+                style={[styles.saveButton, { flex: 1, marginRight: 5 }]}
+                onPress={() => {
+                  if (!editName.trim()) {
+                    Alert.alert('Error', 'El nombre no puede estar vacío');
+                    return;
+                  }
+                  AppointmentDB.updateUserProfile(user, { name: editName, phone: editPhone });
+                  setEditing(false);
+                  Alert.alert('Guardado', 'Datos actualizados correctamente');
+                }}
+              >
+                <Text style={styles.saveButtonText}>Guardar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.cancelEditButton, { flex: 1, marginLeft: 5 }]}
+                onPress={() => setEditing(false)}
+              >
+                <Text style={styles.cancelEditButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        ) : (
+          <>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Nombre:</Text>
+              <Text style={styles.infoValue}>{userProfile?.name || 'No definido'}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Teléfono:</Text>
+              <Text style={styles.infoValue}>{userProfile?.phone || '+54 9 123 456 789'}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Registrado:</Text>
+              <Text style={styles.infoValue}>
+                {AppointmentDB.users[user]?.registeredAt ? 
+                  new Date(AppointmentDB.users[user].registeredAt).toLocaleDateString('es-ES') : 
+                  'Fecha no disponible'
+                }
+              </Text>
+            </View>
+            <TouchableOpacity style={styles.editButton} onPress={() => {
+              setEditName(userProfile?.name || '');
+              setEditPhone(userProfile?.phone || '');
+              setEditing(true);
+            }}>
+              <Text style={styles.editButtonText}>✏️ Editar Información</Text>
+            </TouchableOpacity>
+          </>
+        )}
       </View>
 
       {/* Estadísticas del Sistema */}
@@ -970,7 +1064,7 @@ function ProfileScreen({ user, onLogout }) {
       </View>
 
       {/* Cerrar sesión */}
-      <TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
+  <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutButtonText}>🚪 Cerrar Sesión</Text>
       </TouchableOpacity>
     </ScrollView>
@@ -979,7 +1073,7 @@ function ProfileScreen({ user, onLogout }) {
 
 // Pantalla de Gestión de Doctores
 function ManageDoctorsScreen({ onBack }) {
-  const [doctors, setDoctors] = useState(AppointmentDB.getAllDoctors());
+  const [doctors, setDoctors] = useState(AppointmentDB.getAllDoctors(user));
   const [editingDoctor, setEditingDoctor] = useState(null);
   const [newName, setNewName] = useState('');
 
@@ -990,9 +1084,9 @@ function ManageDoctorsScreen({ onBack }) {
 
   const saveChanges = () => {
     if (newName.trim() && editingDoctor) {
-      const success = AppointmentDB.updateDoctorName(editingDoctor, newName.trim());
+  const success = AppointmentDB.updateDoctorName(user, editingDoctor, newName.trim());
       if (success) {
-        setDoctors(AppointmentDB.getAllDoctors());
+  setDoctors(AppointmentDB.getAllDoctors(user));
         setEditingDoctor(null);
         setNewName('');
         Alert.alert('✅ Éxito', 'Nombre del doctor actualizado correctamente');
