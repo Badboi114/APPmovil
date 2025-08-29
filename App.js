@@ -445,7 +445,6 @@ function HomeScreen({ user }) {
     <ScrollView style={styles.container}>
       <Text style={styles.title}>🏥 Bienvenido</Text>
       <Text style={styles.subtitle}>Sistema de Citas Médicas</Text>
-      
       {/* Estadísticas */}
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
@@ -461,7 +460,6 @@ function HomeScreen({ user }) {
           <Text style={styles.statLabel}>Completadas</Text>
         </View>
       </View>
-
       {/* Próximas citas */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>📅 Próximas Citas</Text>
@@ -498,11 +496,11 @@ function NewAppointmentScreen({ user }) {
   const [availableDoctors, setAvailableDoctors] = useState([]);
   const [availableTimes, setAvailableTimes] = useState([]);
 
-  const specialties = AppointmentDB.getAllSpecialties();
+  const specialties = AppointmentDB.getAllSpecialties(user);
 
   const selectSpecialty = (specialty) => {
     setFormData({ ...formData, specialty, doctor: '', time: '' });
-  setAvailableDoctors(AppointmentDB.getDoctorsBySpecialty(user, specialty));
+    setAvailableDoctors(AppointmentDB.getDoctorsBySpecialty(user, specialty));
     setStep(2);
   };
 
@@ -516,59 +514,45 @@ function NewAppointmentScreen({ user }) {
     if (formData.time && formData.date) setStep(4);
   };
 
-    const handleCreateAppointment = () => {
-      if (!selectedDoctor || !date || !time) {
-        Alert.alert('Error', 'Por favor completa todos los campos');
-        return;
-      }
-      const appointment = {
-        doctor: selectedDoctor,
-        date,
-        time,
-        patientEmail: user,
-      };
-      const id = AppointmentDB.addAppointment(appointment);
-      if (id) {
-        scheduleNotification(date, time, selectedDoctor);
-        Alert.alert('Cita creada', 'Tu cita fue registrada correctamente');
-        setDate('');
-        setTime('');
-        setSelectedDoctor('');
-        setRefresh(!refresh);
-      } else {
-        // Verificar si fue por duplicado
-        const exists = AppointmentDB.getAppointments(user).some(a =>
-          a.doctor === selectedDoctor && a.date === date && a.time === time
-        );
-        if (exists) {
-          Alert.alert('Cita duplicada', 'Ya tienes una cita con este doctor en ese horario.');
-        } else {
-          Alert.alert('Error', 'No se pudo crear la cita');
-        }
-      }
+  const handleCreateAppointment = () => {
+    if (!formData.doctor || !formData.date || !formData.time) {
+      Alert.alert('Error', 'Por favor completa todos los campos');
+      return;
+    }
+    const appointment = {
+      doctor: formData.doctor,
+      date: formData.date,
+      time: formData.time,
+      patientEmail: user,
+      patientName: formData.patientName,
+      patientPhone: formData.patientPhone,
+      reason: formData.reason,
+      specialty: formData.specialty
     };
-
-    Alert.alert(
-      '✅ ¡Cita Agendada!',
-      `Tu cita de ${formData.specialty} ha sido agendada para el ${formData.date} a las ${formData.time}`,
-      [
-        {
-          text: 'OK',
-          onPress: () => {
-            setStep(1);
-            setFormData({
-              specialty: '',
-              doctor: '',
-              date: '',
-              time: '',
-              patientName: '',
-              patientPhone: '',
-              reason: ''
-            });
-          }
-        }
-      ]
-    );
+    const id = AppointmentDB.addAppointment(appointment);
+    if (id) {
+      Alert.alert('Cita creada', 'Tu cita fue registrada correctamente');
+      setStep(1);
+      setFormData({
+        specialty: '',
+        doctor: '',
+        date: '',
+        time: '',
+        patientName: '',
+        patientPhone: '',
+        reason: ''
+      });
+    } else {
+      // Verificar si fue por duplicado
+      const exists = AppointmentDB.getAppointments(user).some(a =>
+        a.doctor === formData.doctor && a.date === formData.date && a.time === formData.time
+      );
+      if (exists) {
+        Alert.alert('Cita duplicada', 'Ya tienes una cita con este doctor en ese horario.');
+      } else {
+        Alert.alert('Error', 'No se pudo crear la cita');
+      }
+    }
   };
 
   const renderStepContent = () => {
@@ -588,7 +572,6 @@ function NewAppointmentScreen({ user }) {
             ))}
           </View>
         );
-
       case 2:
         return (
           <View>
@@ -609,13 +592,11 @@ function NewAppointmentScreen({ user }) {
             </TouchableOpacity>
           </View>
         );
-
       case 3:
         return (
           <View>
             <Text style={styles.stepTitle}>Paso 3: Fecha y Hora</Text>
             <Text style={styles.selectedInfo}>Médico: {formData.doctor}</Text>
-            
             <Text style={styles.inputLabel}>Fecha (DD/MM/AAAA):</Text>
             <TextInput
               style={styles.input}
@@ -623,7 +604,6 @@ function NewAppointmentScreen({ user }) {
               onChangeText={(text) => setFormData({ ...formData, date: text })}
               placeholder="15/09/2025"
             />
-
             <Text style={styles.timeLabel}>Horarios disponibles:</Text>
             <View style={styles.timeGrid}>
               {availableTimes.map(time => (
@@ -644,7 +624,6 @@ function NewAppointmentScreen({ user }) {
                 </TouchableOpacity>
               ))}
             </View>
-
             <TouchableOpacity 
               style={[styles.nextButton, (!formData.time || !formData.date) && styles.nextButtonDisabled]} 
               onPress={selectDateTime}
@@ -652,18 +631,15 @@ function NewAppointmentScreen({ user }) {
             >
               <Text style={styles.nextButtonText}>Siguiente →</Text>
             </TouchableOpacity>
-
             <TouchableOpacity style={styles.backButton} onPress={() => setStep(2)}>
               <Text style={styles.backButtonText}>← Volver</Text>
             </TouchableOpacity>
           </View>
         );
-
       case 4:
         return (
           <View>
             <Text style={styles.stepTitle}>Paso 4: Información del Paciente</Text>
-            
             <Text style={styles.summaryTitle}>Resumen de la cita:</Text>
             <View style={styles.summaryCard}>
               <Text style={styles.summaryText}>🏥 {formData.specialty}</Text>
@@ -671,7 +647,6 @@ function NewAppointmentScreen({ user }) {
               <Text style={styles.summaryText}>📅 {formData.date}</Text>
               <Text style={styles.summaryText}>⏰ {formData.time}</Text>
             </View>
-
             <Text style={styles.inputLabel}>Nombre del paciente:</Text>
             <TextInput
               style={styles.input}
@@ -679,7 +654,6 @@ function NewAppointmentScreen({ user }) {
               onChangeText={(text) => setFormData({ ...formData, patientName: text })}
               placeholder="Nombre completo"
             />
-
             <Text style={styles.inputLabel}>Teléfono:</Text>
             <TextInput
               style={styles.input}
@@ -688,7 +662,6 @@ function NewAppointmentScreen({ user }) {
               placeholder="+54 9 123 456 789"
               keyboardType="phone-pad"
             />
-
             <Text style={styles.inputLabel}>Motivo de la consulta (opcional):</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
@@ -698,16 +671,16 @@ function NewAppointmentScreen({ user }) {
               multiline
               numberOfLines={3}
             />
-
-            <TouchableOpacity style={styles.confirmButton} onPress={createAppointment}>
+            <TouchableOpacity style={styles.confirmButton} onPress={handleCreateAppointment}>
               <Text style={styles.confirmButtonText}>✅ Confirmar Cita</Text>
             </TouchableOpacity>
-
             <TouchableOpacity style={styles.backButton} onPress={() => setStep(3)}>
               <Text style={styles.backButtonText}>← Volver</Text>
             </TouchableOpacity>
           </View>
         );
+      default:
+        return null;
     }
   };
 
@@ -728,7 +701,7 @@ function NewAppointmentScreen({ user }) {
       {renderStepContent()}
     </ScrollView>
   );
-// Llave eliminada para corregir error de sintaxis
+}
 
 // Pantalla Mis Citas
 function MyAppointmentsScreen({ user }) {
