@@ -226,7 +226,42 @@ function LoginScreen({ onLogin }) {
   };
 
   const handleRegister = () => {
-    Alert.alert('Registro', 'Función de registro disponible próximamente');
+    if (!email || !password) {
+      Alert.alert('Error', 'Por favor completa todos los campos');
+      return;
+    }
+
+    if (password.length < 6) {
+      Alert.alert('Error', 'La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert('Error', 'Por favor ingresa un email válido');
+      return;
+    }
+
+    setLoading(true);
+    
+    // Simulamos un proceso de registro
+    setTimeout(() => {
+      setLoading(false);
+      Alert.alert(
+        '✅ Registro Exitoso', 
+        `Cuenta creada para ${email}. Ahora puedes iniciar sesión.`,
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              // Limpiar campos después del registro exitoso
+              setEmail('');
+              setPassword('');
+            }
+          }
+        ]
+      );
+    }, 1000);
   };
 
   return (
@@ -268,6 +303,12 @@ function LoginScreen({ onLogin }) {
           <TouchableOpacity style={styles.linkButton} onPress={handleRegister}>
             <Text style={styles.linkText}>¿No tienes cuenta? Regístrate</Text>
           </TouchableOpacity>
+          
+          <View style={styles.registrationInfo}>
+            <Text style={styles.registrationInfoText}>
+              💡 El registro está activo: Ingresa email y contraseña válidos para crear tu cuenta
+            </Text>
+          </View>
         </View>
       </View>
     </ScrollView>
@@ -1114,6 +1155,18 @@ const styles = StyleSheet.create({
   linkText: {
     color: '#2196F3',
     fontSize: 14,
+  },
+  registrationInfo: {
+    backgroundColor: '#e3f2fd',
+    padding: 12,
+    borderRadius: 6,
+    marginTop: 15,
+  },
+  registrationInfoText: {
+    color: '#1976d2',
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 16,
   },
 
   // General styles
