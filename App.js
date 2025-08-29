@@ -68,19 +68,6 @@ class AppointmentDB {
   static getAllDoctors() {
     return this.doctors;
   }
-
-  static updateDoctorName(doctorId, newName) {
-    const doctorIndex = this.doctors.findIndex(doc => doc.id === doctorId);
-    if (doctorIndex !== -1) {
-      this.doctors[doctorIndex].name = newName;
-      return true;
-    }
-    return false;
-  }
-
-  static getAllDoctors() {
-    return this.doctors;
-  }
 }
 
 // Pantalla de Login
@@ -220,20 +207,6 @@ function HomeScreen({ user }) {
         ) : (
           <Text style={styles.emptyText}>No tienes citas próximas</Text>
         )}
-      </View>
-
-      {/* Acciones rápidas */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>⚡ Acciones Rápidas</Text>
-        <TouchableOpacity style={styles.quickAction}>
-          <Text style={styles.quickActionText}>🆕 Agendar Nueva Cita</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.quickAction}>
-          <Text style={styles.quickActionText}>👩‍⚕️ Ver Médicos Disponibles</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.quickAction}>
-          <Text style={styles.quickActionText}>📋 Mi Historial Médico</Text>
-        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -569,13 +542,10 @@ function MyAppointmentsScreen({ user }) {
             
             <View style={styles.appointmentActions}>
               <TouchableOpacity
-                style={styles.cancelButton}
+                style={[styles.cancelButton, { flex: 1 }]}
                 onPress={() => cancelAppointment(appointment)}
               >
-                <Text style={styles.cancelButtonText}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.contactButton}>
-                <Text style={styles.contactButtonText}>Contactar</Text>
+                <Text style={styles.cancelButtonText}>Cancelar Cita</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1064,15 +1034,6 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     padding: 20,
   },
-  quickAction: {
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  quickActionText: {
-    fontSize: 16,
-    color: '#333',
-  },
 
   // New appointment styles
   progressBar: {
@@ -1316,18 +1277,6 @@ const styles = StyleSheet.create({
     marginRight: 5,
   },
   cancelButtonText: {
-    color: 'white',
-    fontSize: 12,
-  },
-  contactButton: {
-    flex: 1,
-    backgroundColor: '#2196F3',
-    padding: 8,
-    borderRadius: 6,
-    alignItems: 'center',
-    marginLeft: 5,
-  },
-  contactButtonText: {
     color: 'white',
     fontSize: 12,
   },

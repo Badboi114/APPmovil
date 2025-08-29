@@ -10,7 +10,6 @@ Una aplicación móvil completa para gestionar citas médicas, desarrollada con 
 - **🩺 8 médicos especialistas**
 - **📱 Interfaz intuitiva y fácil de usar**
 - **🏠 Panel de inicio con estadísticas**
-- **⚡ Acciones rápidas**
 - **📋 Historial de citas**
 - **👤 Perfil de usuario**
 - **⚙️ Gestión personalizable de doctores** ✨ NUEVA FUNCIÓN
@@ -48,7 +47,6 @@ Una aplicación móvil completa para gestionar citas médicas, desarrollada con 
 - **Filtros:** Todas, próximas, pasadas
 - **Detalles completos** de cada cita
 - **Cancelación** de citas
-- **Contacto** con el médico
 
 ### Perfil
 - **Información personal** del usuario
@@ -149,7 +147,7 @@ A7/
 ### 4. Panel de Inicio
 - Visualiza estadísticas de tus citas
 - Revisa próximas citas programadas
-- Usa acciones rápidas para navegación
+- Navega fácilmente a otras secciones
 
 ### 5. Gestión de Doctores ✨
 - Ve a "Perfil" → "Gestionar Doctores"
