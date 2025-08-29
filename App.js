@@ -27,7 +27,7 @@ Notifications.setNotificationHandler({
 
 // Base de datos local simulada
 class AppointmentDB {
-  static appointments = [];
+  static users = {}; // { email: { password, profile, appointments: [] } }
   static doctors = [
     { id: 1, name: 'Dr. Carlos García', specialty: 'Cardiología', schedule: ['09:00', '10:00', '11:00', '14:00', '15:00'] },
     { id: 2, name: 'Dra. María López', specialty: 'Dermatología', schedule: ['08:30', '09:30', '10:30', '15:30', '16:30'] },
@@ -40,17 +40,20 @@ class AppointmentDB {
   ];
 
   static addAppointment(appointment) {
+    const { patientEmail } = appointment;
+    if (!this.users[patientEmail]) return null;
     const newAppointment = {
       id: Date.now(),
       ...appointment,
       status: 'confirmada',
       createdAt: new Date().toISOString()
     };
-    this.appointments.push(newAppointment);
-    
+    if (!this.users[patientEmail].appointments) {
+      this.users[patientEmail].appointments = [];
+    }
+    this.users[patientEmail].appointments.push(newAppointment);
     // Programar notificaciones
     this.scheduleNotifications(newAppointment);
-    
     return newAppointment;
   }
 
@@ -101,13 +104,14 @@ class AppointmentDB {
     }
   }
 
-  static getAppointments() {
-    return this.appointments;
+  static getAppointments(userEmail) {
+    if (!this.users[userEmail]) return [];
+    return this.users[userEmail].appointments || [];
   }
 
-  static async cancelAppointment(id) {
-    this.appointments = this.appointments.filter(apt => apt.id !== id);
-    
+  static async cancelAppointment(userEmail, id) {
+    if (!this.users[userEmail]) return;
+    this.users[userEmail].appointments = (this.users[userEmail].appointments || []).filter(apt => apt.id !== id);
     // Cancelar notificaciones asociadas
     try {
       const scheduled = await Notifications.getAllScheduledNotificationsAsync();
@@ -144,16 +148,14 @@ class AppointmentDB {
   }
 
   static createSampleAppointments(userEmail) {
+    if (!this.users[userEmail]) return;
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
-    
     const nextWeek = new Date(today);
     nextWeek.setDate(today.getDate() + 7);
-    
     const lastWeek = new Date(today);
     lastWeek.setDate(today.getDate() - 7);
-
     const sampleAppointments = [
       {
         id: Date.now() + 1,
@@ -195,81 +197,141 @@ class AppointmentDB {
         createdAt: new Date().toISOString()
       }
     ];
-
-    // Solo agregar si no existen citas para este usuario
-    const existingAppointments = this.appointments.filter(apt => apt.patientEmail === userEmail);
-    if (existingAppointments.length === 0) {
-      this.appointments.push(...sampleAppointments);
+    if (!this.users[userEmail].appointments || this.users[userEmail].appointments.length === 0) {
+      this.users[userEmail].appointments = [...sampleAppointments];
     }
+  }
+
+  // ========== GESTIÓN DE USUARIOS ==========
+  
+  static registerUser(email, password) {
+    // Verificar si el usuario ya existe
+    if (this.users[email]) {
+      return { success: false, message: 'El usuario ya está registrado' };
+    }
+
+    // Crear nuevo usuario
+    this.users[email] = {
+      email: email,
+      password: password, // En producción, esto debería estar hasheado
+      registeredAt: new Date().toISOString(),
+      profile: {
+        name: email.split('@')[0], // Usar parte del email como nombre inicial
+        phone: '',
+        preferences: {
+          notifications: true,
+          language: 'es'
+        }
+      }
+    };
+
+    console.log('Usuario registrado:', email);
+    console.log('Usuarios actuales:', Object.keys(this.users));
+    
+    return { success: true, message: 'Usuario registrado exitosamente' };
+  }
+
+  static authenticateUser(email, password) {
+    const user = this.users[email];
+    if (!user) {
+      return { success: false, message: 'Usuario no encontrado' };
+    }
+
+    if (user.password !== password) {
+      return { success: false, message: 'Contraseña incorrecta' };
+    }
+
+    return { success: true, user: user };
+  }
+
+  static getUserProfile(email) {
+    return this.users[email]?.profile || null;
+  }
+
+  static updateUserProfile(email, profileData) {
+    if (this.users[email]) {
+      this.users[email].profile = { ...this.users[email].profile, ...profileData };
+      return true;
+    }
+    return false;
+  }
+
+  static getAllUsers() {
+    return Object.keys(this.users);
   }
 }
 
 // Pantalla de Login
 function LoginScreen({ onLogin }) {
+  const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  const resetFields = () => {
+    setEmail('');
+    setPassword('');
+    setConfirmPassword('');
+  };
 
   const handleLogin = () => {
     if (!email || !password) {
       Alert.alert('Error', 'Por favor ingresa email y contraseña');
       return;
     }
-
     setLoading(true);
-    
-    // Simular autenticación con timeout
     setTimeout(() => {
       setLoading(false);
-      onLogin(email); // Llamar directamente a onLogin
-    }, 1000);
+      const result = AppointmentDB.authenticateUser(email, password);
+      if (result.success) {
+        onLogin(email);
+        resetFields();
+      } else {
+        Alert.alert('Error de Autenticación', result.message);
+      }
+    }, 800);
   };
 
   const handleRegister = () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Por favor completa todos los campos');
+    if (!email || !password || !confirmPassword) {
+      Alert.alert('Error', 'Completa todos los campos');
       return;
     }
-
     if (password.length < 6) {
       Alert.alert('Error', 'La contraseña debe tener al menos 6 caracteres');
       return;
     }
-
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Las contraseñas no coinciden');
+      return;
+    }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       Alert.alert('Error', 'Por favor ingresa un email válido');
       return;
     }
-
     setLoading(true);
-    
-    // Simulamos un proceso de registro
     setTimeout(() => {
       setLoading(false);
-      Alert.alert(
-        '✅ Registro Exitoso', 
-        `Cuenta creada para ${email}. Ahora puedes iniciar sesión.`,
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              // Limpiar campos después del registro exitoso
-              setEmail('');
-              setPassword('');
-            }
-          }
-        ]
-      );
-    }, 1000);
+      const result = AppointmentDB.registerUser(email, password);
+      if (result.success) {
+        onLogin(email); // Inicia sesión automáticamente
+        resetFields();
+        Alert.alert('¡Bienvenido!', 'Tu cuenta fue creada exitosamente.');
+      } else {
+        Alert.alert('Error de Registro', result.message);
+      }
+    }, 900);
   };
 
   return (
     <ScrollView style={styles.container}>
       <View style={styles.loginContainer}>
         <Text style={styles.loginTitle}>🏥 Sistema de Citas Médicas</Text>
-        <Text style={styles.loginSubtitle}>Inicia sesión para continuar</Text>
-        
+        <Text style={styles.loginSubtitle}>
+          {isRegister ? 'Crea tu cuenta para comenzar' : 'Inicia sesión para continuar'}
+        </Text>
         <View style={styles.loginForm}>
           <Text style={styles.inputLabel}>Email:</Text>
           <TextInput
@@ -280,7 +342,6 @@ function LoginScreen({ onLogin }) {
             keyboardType="email-address"
             autoCapitalize="none"
           />
-          
           <Text style={styles.inputLabel}>Contraseña:</Text>
           <TextInput
             style={styles.input}
@@ -289,26 +350,38 @@ function LoginScreen({ onLogin }) {
             placeholder="••••••••"
             secureTextEntry
           />
-          
-          <TouchableOpacity 
-            style={[styles.button, loading && styles.buttonDisabled]} 
-            onPress={handleLogin}
+          {isRegister && (
+            <>
+              <Text style={styles.inputLabel}>Confirmar Contraseña:</Text>
+              <TextInput
+                style={styles.input}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                placeholder="Repite tu contraseña"
+                secureTextEntry
+              />
+            </>
+          )}
+          <TouchableOpacity
+            style={[styles.button, loading && styles.buttonDisabled]}
+            onPress={isRegister ? handleRegister : handleLogin}
             disabled={loading}
           >
             <Text style={styles.buttonText}>
-              {loading ? 'Iniciando...' : 'Iniciar Sesión'}
+              {loading ? (isRegister ? 'Registrando...' : 'Iniciando...') : (isRegister ? 'Crear Cuenta' : 'Iniciar Sesión')}
             </Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.linkButton} onPress={handleRegister}>
-            <Text style={styles.linkText}>¿No tienes cuenta? Regístrate</Text>
-          </TouchableOpacity>
-          
-          <View style={styles.registrationInfo}>
-            <Text style={styles.registrationInfoText}>
-              💡 El registro está activo: Ingresa email y contraseña válidos para crear tu cuenta
+          <TouchableOpacity
+            style={styles.linkButton}
+            onPress={() => {
+              setIsRegister(!isRegister);
+              resetFields();
+            }}
+          >
+            <Text style={styles.linkText}>
+              {isRegister ? '¿Ya tienes cuenta? Inicia sesión' : '¿No tienes cuenta? Crear cuenta'}
             </Text>
-          </View>
+          </TouchableOpacity>
         </View>
       </View>
     </ScrollView>
@@ -325,14 +398,11 @@ function HomeScreen({ user }) {
   }, []);
 
   const loadAppointments = () => {
-    const allAppointments = AppointmentDB.getAppointments();
-    const userAppointments = allAppointments.filter(apt => apt.patientEmail === user);
+    const userAppointments = AppointmentDB.getAppointments(user);
     setAppointments(userAppointments);
-    
     const now = new Date();
     const upcoming = userAppointments.filter(apt => new Date(apt.date) > now).length;
     const completed = userAppointments.filter(apt => apt.status === 'completada').length;
-    
     setStats({
       total: userAppointments.length,
       upcoming,
@@ -636,9 +706,7 @@ function MyAppointmentsScreen({ user }) {
   }, []);
 
   const loadAppointments = () => {
-    const allAppointments = AppointmentDB.getAppointments();
-    const userAppointments = allAppointments.filter(apt => apt.patientEmail === user);
-    setAppointments(userAppointments);
+    setAppointments(AppointmentDB.getAppointments(user));
   };
 
   const cancelAppointment = (appointment) => {
@@ -651,7 +719,7 @@ function MyAppointmentsScreen({ user }) {
           text: 'Sí, Cancelar',
           style: 'destructive',
           onPress: async () => {
-            await AppointmentDB.cancelAppointment(appointment.id);
+            await AppointmentDB.cancelAppointment(user, appointment.id);
             loadAppointments();
             Alert.alert('✅ Cita cancelada correctamente');
           }
@@ -757,6 +825,11 @@ function MyAppointmentsScreen({ user }) {
 function ProfileScreen({ user, onLogout }) {
   const [notifications, setNotifications] = useState(true);
   const [showManageDoctors, setShowManageDoctors] = useState(false);
+  const [showUsersList, setShowUsersList] = useState(false);
+
+  // Obtener perfil del usuario actual
+  const userProfile = AppointmentDB.getUserProfile(user);
+  const allUsers = AppointmentDB.getAllUsers();
 
   const toggleNotifications = async () => {
     if (!notifications) {
@@ -800,12 +873,59 @@ function ProfileScreen({ user, onLogout }) {
           <Text style={styles.infoValue}>{user}</Text>
         </View>
         <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Nombre:</Text>
+          <Text style={styles.infoValue}>{userProfile?.name || 'No definido'}</Text>
+        </View>
+        <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>Teléfono:</Text>
-          <Text style={styles.infoValue}>+54 9 123 456 789</Text>
+          <Text style={styles.infoValue}>{userProfile?.phone || '+54 9 123 456 789'}</Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Registrado:</Text>
+          <Text style={styles.infoValue}>
+            {AppointmentDB.users[user]?.registeredAt ? 
+              new Date(AppointmentDB.users[user].registeredAt).toLocaleDateString('es-ES') : 
+              'Fecha no disponible'
+            }
+          </Text>
         </View>
         <TouchableOpacity style={styles.editButton}>
           <Text style={styles.editButtonText}>✏️ Editar Información</Text>
         </TouchableOpacity>
+      </View>
+
+      {/* Estadísticas del Sistema */}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>📊 Mi Actividad</Text>
+        <View style={styles.statsContainer}>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{AppointmentDB.getAppointments(user).length}</Text>
+            <Text style={styles.statLabel}>Mis Citas</Text>
+          </View>
+        </View>
+        <TouchableOpacity 
+          style={styles.viewUsersButton} 
+          onPress={() => setShowUsersList(!showUsersList)}
+        >
+          <Text style={styles.viewUsersButtonText}>
+            {showUsersList ? '🙈 Ocultar Usuarios' : '👥 Ver Usuarios Registrados'}
+          </Text>
+        </TouchableOpacity>
+        {showUsersList && (
+          <View style={styles.usersListContainer}>
+            <Text style={styles.usersListTitle}>Usuarios registrados (solo email y fecha):</Text>
+            {allUsers.map((userEmail, index) => (
+              <View key={userEmail} style={styles.userItem}>
+                <Text style={styles.userEmail}>
+                  {index + 1}. {userEmail === user ? 'Tú' : userEmail}
+                </Text>
+                <Text style={styles.userDate}>
+                  Registrado: {new Date(AppointmentDB.users[userEmail]?.registeredAt || '').toLocaleDateString('es-ES')}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
       </View>
 
       {/* Gestión de Doctores */}
@@ -1610,6 +1730,45 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
     fontStyle: 'italic',
+  },
+  viewUsersButton: {
+    backgroundColor: '#4CAF50',
+    padding: 12,
+    borderRadius: 6,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  viewUsersButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  usersListContainer: {
+    marginTop: 15,
+    padding: 10,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 6,
+  },
+  usersListTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 10,
+  },
+  userItem: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    paddingVertical: 8,
+  },
+  userEmail: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '500',
+  },
+  userDate: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 2,
   },
   doctorEditCard: {
     backgroundColor: 'white',
