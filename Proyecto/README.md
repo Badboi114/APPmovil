@@ -1,44 +1,64 @@
+
 # 🔐 PassVault - Gestor de Contraseñas Móvil
 
-Una aplicación móvil segura para gestionar contraseñas desarrollada con **Ionic Angular** y **TypeScript**.
+PassVault es una aplicación móvil avanzada para Android, diseñada para proteger, organizar y generar todas tus contraseñas de forma sencilla y ultra segura.
 
 ![PassVault](https://img.shields.io/badge/Ionic-Angular-blue) ![TypeScript](https://img.shields.io/badge/TypeScript-4.0+-blue) ![Mobile](https://img.shields.io/badge/Platform-Mobile-green)
 
-## � Características Principales
+---
 
-### ✨ Sistema de Autenticación Seguro
-- **Registro de usuarios** con email y contraseña
-- **PIN de seguridad** de 4 dígitos generado automáticamente
-- **Doble autenticación**: Login + PIN para acceso completo
-- **Encriptación** de contraseñas y PINs con CryptoJS
+## 🚀 Características Principales
 
-### 🔒 Gestión de Contraseñas
-- Almacenamiento seguro de contraseñas
-- Encriptación local con algoritmos seguros
-- Interfaz intuitiva para gestionar credenciales
-- Búsqueda y organización de contraseñas
+- Guarda **contraseñas ilimitadas** cifradas localmente
+- Organiza tus claves por categorías y tipos
+- Genera contraseñas seguras y personalizadas (alfanuméricas, solo números, solo letras, con símbolos, WPA/WPA2, etc.)
+- Cambia tu PIN de acceso en cualquier momento
+- Acceso con doble autenticación: contraseña y PIN
+- Bloqueo rápido de la app
+- Interfaz moderna, intuitiva y accesible
 
-### 👤 Perfil de Usuario
-- **Edición individual** de campos del perfil
-- Actualización de información personal
-- Gestión de configuraciones de cuenta
-
-### 📱 Diseño Responsive
-- **Interfaz móvil optimizada** con Ionic UI
-- Diseño moderno con gradientes y efectos visuales
-- **Teclado numérico** personalizado para PIN
-- Experiencia de usuario intuitiva
+---
 
 ## 🛠️ Tecnologías Utilizadas
 
-- **Framework**: Ionic 8+ con Angular 18+
-- **Lenguaje**: TypeScript
-- **Encriptación**: CryptoJS
-- **Almacenamiento**: LocalStorage
-- **Estilos**: SCSS con variables CSS personalizadas
-- **Build**: Angular CLI con Ionic CLI
+- **Framework:** Ionic 8+ con Angular 18+
+- **Lenguaje:** TypeScript
+- **Cifrado:** CryptoJS (AES-256, PBKDF2)
+- **Base de datos:** SQLite local cifrada
+- **Plugins:** Capacitor, @capacitor-community/sqlite, Clipboard
+- **Estilos:** SCSS y CSS variables
 
-## � Instalación y Configuración
+---
+
+## 🔒 Seguridad y Cifrado
+
+Tus contraseñas se cifran usando **AES-256** con saltos y vectores de inicialización únicos para cada clave. Además, se utiliza **PBKDF2** para derivar claves seguras y proteger contra ataques de fuerza bruta.
+
+**Tipos de cifrado:**
+- **AES-256:** Algoritmo simétrico de nivel bancario
+- **PBKDF2:** Derivación de clave con miles de iteraciones
+
+---
+
+## �️ Tipos de Contraseñas que Puedes Crear
+
+- Contraseñas alfanuméricas personalizadas
+- Solo números o solo letras
+- Con símbolos especiales
+- Claves WPA/WPA2 para WiFi
+- Contraseñas largas para bancos o servicios críticos
+
+Cada tipo puede ser generado automáticamente o personalizado según tus necesidades.
+
+---
+
+## �️ Base de Datos y Privacidad
+
+Tus datos se almacenan localmente en tu dispositivo, en una base de datos **SQLite cifrada**. Nunca subimos tus contraseñas a la nube. ¡Tú tienes el control total de tu información!
+
+---
+
+## 📲 Instalación y Configuración
 
 ### Prerrequisitos
 ```bash
