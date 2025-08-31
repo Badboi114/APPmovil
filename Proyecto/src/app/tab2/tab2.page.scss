@@ -181,6 +181,17 @@
 
   .category-section {
     margin-bottom: 10px;
+    ion-chip {
+      background: var(--ion-color-light, #f4f4f4);
+      color: var(--ion-color-dark, #222);
+      ion-label {
+        color: var(--ion-color-dark, #222) !important;
+        font-weight: bold;
+      }
+      ion-icon {
+        color: var(--ion-color-primary, #3880ff) !important;
+      }
+    }
   }
 
   .date-section {
